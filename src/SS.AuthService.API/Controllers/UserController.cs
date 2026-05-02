@@ -36,7 +36,7 @@ public class UserController : ControllerBase
         }
 
         // Gunakan konstanta dari Domain Layer untuk menghindari magic string "1"
-        var isAdmin = User.IsInRole(RoleConstants.AdminRoleName);
+        var isAdmin = User.IsInRole(RoleConstants.SuperAdmin);
 
         var query = new GetProfileQuery(publicId, loggedInUserId, isAdmin);
         var profile = await _mediator.Send(query);
