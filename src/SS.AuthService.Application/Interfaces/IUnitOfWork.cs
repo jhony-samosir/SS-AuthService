@@ -9,6 +9,7 @@ public interface IUnitOfWork
     IEmailVerificationRepository EmailVerifications { get; }
     ILoginAttemptRepository LoginAttempts { get; }
     IAuthSessionRepository AuthSessions { get; }
+    IRoleMenuRepository RoleMenus { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);

@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using SS.AuthService.Application.Interfaces;
 using SS.AuthService.Infrastructure.Persistence.Context;
 using SS.AuthService.Infrastructure.Repositories;
@@ -17,16 +19,23 @@ public class UnitOfWork : IUnitOfWork
     private IEmailVerificationRepository? _emailVerifications;
     private ILoginAttemptRepository? _loginAttempts;
     private IAuthSessionRepository? _authSessions;
+    private IRoleMenuRepository? _roleMenus;
 
-    public UnitOfWork(AppDbContext context)
+    private readonly IMemoryCache _cache;
+    private readonly ILoggerFactory _loggerFactory;
+
+    public UnitOfWork(AppDbContext context, IMemoryCache cache, ILoggerFactory loggerFactory)
     {
         _context = context;
+        _cache = cache;
+        _loggerFactory = loggerFactory;
     }
 
     public IUserRepository Users => _users ??= new UserRepository(_context);
     public IEmailVerificationRepository EmailVerifications => _emailVerifications ??= new EmailVerificationRepository(_context);
     public ILoginAttemptRepository LoginAttempts => _loginAttempts ??= new LoginAttemptRepository(_context);
     public IAuthSessionRepository AuthSessions => _authSessions ??= new AuthSessionRepository(_context);
+    public IRoleMenuRepository RoleMenus => _roleMenus ??= new RoleMenuRepository(_context, _cache, _loggerFactory.CreateLogger<RoleMenuRepository>());
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => await _context.SaveChangesAsync(cancellationToken);

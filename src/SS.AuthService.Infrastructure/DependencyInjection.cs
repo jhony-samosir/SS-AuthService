@@ -19,9 +19,10 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IEmailVerificationRepository, EmailVerificationRepository>();
         services.AddScoped<ILoginAttemptRepository, LoginAttemptRepository>();
         services.AddScoped<IAuthSessionRepository, AuthSessionRepository>();
+        services.AddScoped<IEmailVerificationRepository, EmailVerificationRepository>();
+        services.AddScoped<IRoleMenuRepository, RoleMenuRepository>();
 
         // Authentication & Security
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));

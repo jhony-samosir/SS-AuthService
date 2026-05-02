@@ -23,6 +23,9 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         => await _context.Users.FirstOrDefaultAsync(u => u.Id == id && u.DeletedAt == null, cancellationToken);
 
+    public async Task<User?> GetByPublicIdAsync(Guid publicId, CancellationToken cancellationToken = default)
+        => await _context.Users.FirstOrDefaultAsync(u => u.PublicId == publicId && u.DeletedAt == null, cancellationToken);
+
     public async Task AddAsync(User entity, CancellationToken cancellationToken = default)
         => await _context.Users.AddAsync(entity, cancellationToken);
 
