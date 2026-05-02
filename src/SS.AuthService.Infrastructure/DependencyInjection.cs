@@ -23,6 +23,8 @@ public static class DependencyInjection
         services.AddScoped<IAuthSessionRepository, AuthSessionRepository>();
         services.AddScoped<IEmailVerificationRepository, EmailVerificationRepository>();
         services.AddScoped<IRoleMenuRepository, RoleMenuRepository>();
+        services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
+        services.AddScoped<IPasswordHistoryRepository, PasswordHistoryRepository>();
 
         // Authentication & Security
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));

@@ -1,9 +1,15 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using SS.AuthService.API.DTOs;
 using SS.AuthService.Application.Auth.Commands;
 using SS.AuthService.Application.Auth.DTOs;
+using SS.AuthService.Application.Users.Queries;
+using SS.AuthService.Domain.Constants;
+using SS.AuthService.Infrastructure.Authentication;
 
 namespace SS.AuthService.API.Controllers;
 
@@ -12,30 +18,24 @@ namespace SS.AuthService.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly SS.AuthService.Application.Common.Settings.SecuritySettings _securitySettings;
 
-    public AuthController(IMediator mediator)
+    public AuthController(IMediator mediator, Microsoft.Extensions.Options.IOptions<SS.AuthService.Application.Common.Settings.SecuritySettings> securitySettings)
     {
         _mediator = mediator;
+        _securitySettings = securitySettings.Value;
     }
 
     [HttpPost("register")]
     [EnableRateLimiting("StrictPolicy")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    public async Task<IActionResult> Register([FromBody] RegisterUserCommand command)
     {
-        var command = new RegisterUserCommand(
-            request.Email,
-            request.Password,
-            request.FullName,
-            request.AcceptTos,
-            request.AcceptPrivacyPolicy);
-
         var result = await _mediator.Send(command);
-        
         if (result.Success)
         {
             return Ok(new { message = result.Message });
         }
-        
+
         return BadRequest(new { message = result.Message });
     }
 
@@ -43,45 +43,29 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("StrictPolicy")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var command = new LoginUserCommand(
-            request.Email,
-            request.Password,
-            request.DeviceInfo,
-            HttpContext.Connection.RemoteIpAddress?.ToString());
-
+        var command = new LoginUserCommand(request.Email, request.Password, request.DeviceInfo);
         var result = await _mediator.Send(command);
 
         if (!result.Success)
         {
-            return result.StatusCode switch
-            {
-                429 => StatusCode(429, new { message = result.Message }),
-                403 => StatusCode(403, new { message = result.Message }),
-                _ => BadRequest(new { message = result.Message })
-            };
+            return Unauthorized(new { message = result.Message });
         }
 
-        // Set Refresh Token in HttpOnly Secure Cookie
-        if (!string.IsNullOrEmpty(result.RefreshToken))
+        // Set Refresh Token in HttpOnly Cookie for security
+        var cookieOptions = new CookieOptions
         {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true, // Wajib HTTPS
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(7)
-            };
-            Response.Cookies.Append("refreshToken", result.RefreshToken, cookieOptions);
-        }
+            HttpOnly = true,
+            Secure = true, // Always use HTTPS in production
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddDays(_securitySettings.RefreshTokenExpiryDays)
+        };
+        Response.Cookies.Append("refreshToken", result.RefreshToken!, cookieOptions);
 
-        return Ok(new
-        {
-            message = result.Message,
-            accessToken = result.AccessToken
-        });
+        return Ok(new { accessToken = result.AccessToken });
     }
 
     [HttpGet("verify-email")]
+    [EnableRateLimiting("StrictPolicy")]
     public async Task<IActionResult> VerifyEmail([FromQuery] string token)
     {
         if (string.IsNullOrEmpty(token))
@@ -98,6 +82,38 @@ public class AuthController : ControllerBase
             VerifyEmailResult.TokenExpired => BadRequest(new { message = "Verification link has expired. Please request a new one." }),
             VerifyEmailResult.TokenNotFound => BadRequest(new { message = "Invalid verification link." }),
             _ => BadRequest(new { message = "An error occurred during verification." })
+        };
+    }
+
+    [HttpPost("forgot-password")]
+    [EnableRateLimiting("StrictPolicy")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        var command = new ForgotPasswordCommand(request.Email);
+        await _mediator.Send(command);
+
+        // Selalu return sukses untuk mencegah Account Enumeration
+        return Ok(new { message = "If your email is registered, a password reset link has been sent to your inbox." });
+    }
+
+    [HttpPost("reset-password")]
+    [EnableRateLimiting("StrictPolicy")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        var command = new ResetPasswordCommand(request.Token, request.NewPassword);
+        var result = await _mediator.Send(command);
+
+        if (result.IsSuccess)
+        {
+            return Ok(new { message = "Password has been reset successfully. All active sessions have been revoked." });
+        }
+
+        // Handle specific error codes for better UX
+        return result.ErrorCode switch
+        {
+            "PasswordUsedRecently" => BadRequest(new { message = result.ErrorMessage }),
+            "InvalidToken" => BadRequest(new { message = result.ErrorMessage }),
+            _ => BadRequest(new { message = "An error occurred during password reset." })
         };
     }
 }

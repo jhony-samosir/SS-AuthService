@@ -28,6 +28,17 @@ public class AuthSessionRepository : IAuthSessionRepository
     public void Revoke(AuthSession session)
     {
         session.IsRevoked = true;
+        session.UpdatedAt = DateTime.UtcNow;
         _context.AuthSessions.Update(session);
+    }
+
+    public async Task RevokeAllForUserAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        await _context.AuthSessions
+            .Where(s => s.UserId == userId && !s.IsRevoked)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(b => b.IsRevoked, true)
+                .SetProperty(b => b.UpdatedAt, DateTime.UtcNow), 
+                cancellationToken);
     }
 }
