@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SS.AuthService.Application.Interfaces;
+using SS.AuthService.Infrastructure.Authentication;
 using SS.AuthService.Infrastructure.Persistence.Context;
 using SS.AuthService.Infrastructure.Repositories;
 using SS.AuthService.Infrastructure.Services;
@@ -20,8 +21,10 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IEmailVerificationRepository, EmailVerificationRepository>();
 
-        // Services
-        services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+        // Authentication & Security
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
+        services.AddScoped<IJwtProvider, JwtProvider>();
         services.AddScoped<ITokenHasher, TokenHasher>();
         services.AddScoped<IEmailService, SimulatedEmailService>();
         

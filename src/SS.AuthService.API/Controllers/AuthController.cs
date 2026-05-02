@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SS.AuthService.API.DTOs;
 using SS.AuthService.Application.Auth.Commands;
 
@@ -17,6 +18,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting("StrictPolicy")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         var command = new RegisterUserCommand(
