@@ -20,4 +20,15 @@ public interface IUserRepository
 
     /// <summary>Ambil ID role default "Customer" dari database. Mencegah magic number hardcoded.</summary>
     Task<int> GetDefaultCustomerRoleIdAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>List dengan filter + sort + pagination.</summary>
+    Task<(List<User> Items, int TotalCount)> GetPagedAsync(
+        SS.AuthService.Application.Users.Queries.UserFilter filter,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Cek apakah RoleId valid.</summary>
+    Task<bool> RoleExistsAsync(int roleId, CancellationToken cancellationToken = default);
+
+    /// <summary>Hard delete (untuk cleanup atau jika benar-benar dibutuhkan).</summary>
+    void Delete(User entity);
 }

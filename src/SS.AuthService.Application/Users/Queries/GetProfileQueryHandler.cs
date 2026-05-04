@@ -47,7 +47,19 @@ public class GetProfileQueryHandler : IRequestHandler<GetProfileQuery, UserProfi
             targetUser.PublicId,
             targetUser.Email,
             targetUser.FullName,
-            targetUser.EmailVerifiedAt != null
+            targetUser.Role?.Name ?? "Unknown",
+            targetUser.IsActive,
+            targetUser.MfaEnabled,
+            targetUser.EmailVerifiedAt != null,
+            targetUser.LockedUntil.HasValue && targetUser.LockedUntil.Value > DateTime.UtcNow,
+            targetUser.LockedUntil,
+            targetUser.FailedLoginAttempts,
+            targetUser.TosAcceptedAt,
+            targetUser.PrivacyPolicyAcceptedAt,
+            targetUser.CreatedAt,
+            targetUser.CreatedBy,
+            targetUser.UpdatedAt,
+            targetUser.UpdatedBy
         );
     }
 }
