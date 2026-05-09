@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using SS.AuthService.Application.Users.Commands;
+using SS.AuthService.Application.Users.DTOs;
 using SS.AuthService.Application.Users.Queries;
 using SS.AuthService.Infrastructure.Authentication;
 using System;
@@ -346,6 +347,3 @@ public class UserController : ControllerBase
         return Ok(result.Value);
     }
 }
-
-public record LockUserRequest(DateTime? LockedUntil, int? LockDurationMinutes);
-public record AssignRoleRequest(Guid RolePublicId);

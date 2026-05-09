@@ -1,6 +1,7 @@
 using MediatR;
 using SS.AuthService.Application.Common.Models;
 using SS.AuthService.Application.Interfaces;
+using SS.AuthService.Application.Users.DTOs;
 using SS.AuthService.Application.Users.Queries;
 
 namespace SS.AuthService.Application.Users.Handlers;
