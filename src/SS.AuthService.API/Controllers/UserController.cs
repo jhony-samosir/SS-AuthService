@@ -148,4 +148,75 @@ public class UserController : ControllerBase
 
         return Ok(new { message = "Password reset email has been sent to the user." });
     }
+
+    /// <summary>
+    /// Mengaktifkan user.
+    /// </summary>
+    [HttpPut("{publicId:guid}/activate")]
+    [AuthorizePermission("UserManagement", "Update")]
+    public async Task<IActionResult> Activate(Guid publicId)
+    {
+        var result = await _mediator.Send(new ActivateUserCommand(publicId));
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorCode == "UserNotFound") return NotFound();
+            return BadRequest(new { message = result.ErrorMessage, code = result.ErrorCode });
+        }
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Menonaktifkan user (deactivate).
+    /// </summary>
+    [HttpPut("{publicId:guid}/deactivate")]
+    [AuthorizePermission("UserManagement", "Update")]
+    public async Task<IActionResult> Deactivate(Guid publicId)
+    {
+        var result = await _mediator.Send(new DeactivateUserCommand(publicId));
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorCode == "UserNotFound") return NotFound();
+            return BadRequest(new { message = result.ErrorMessage, code = result.ErrorCode });
+        }
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Mengunci user (lock).
+    /// </summary>
+    [HttpPut("{publicId:guid}/lock")]
+    [AuthorizePermission("UserManagement", "Update")]
+    public async Task<IActionResult> Lock(Guid publicId, [FromBody] LockUserRequest request)
+    {
+        var result = await _mediator.Send(new LockUserCommand(publicId, request.LockedUntil, request.LockDurationMinutes));
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorCode == "UserNotFound") return NotFound();
+            return BadRequest(new { message = result.ErrorMessage, code = result.ErrorCode });
+        }
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Mengubah role user.
+    /// </summary>
+    [HttpPut("{publicId:guid}/role")]
+    [AuthorizePermission("UserManagement", "Update")]
+    public async Task<IActionResult> AssignRole(Guid publicId, [FromBody] AssignRoleRequest request)
+    {
+        var result = await _mediator.Send(new AssignUserRoleCommand(publicId, request.RolePublicId));
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorCode is "UserNotFound" or "RoleNotFound") return NotFound();
+            return BadRequest(new { message = result.ErrorMessage, code = result.ErrorCode });
+        }
+
+        return NoContent();
+    }
 }
+
+public record LockUserRequest(DateTime? LockedUntil, int? LockDurationMinutes);
+public record AssignRoleRequest(Guid RolePublicId);

@@ -13,6 +13,7 @@ public interface IUnitOfWork
     IPasswordResetRepository PasswordResets { get; }
     IPasswordHistoryRepository PasswordHistories { get; }
     IMfaRecoveryCodeRepository MfaRecoveryCodes { get; }
+    IRoleRepository Roles { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);

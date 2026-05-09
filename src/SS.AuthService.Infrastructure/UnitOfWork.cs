@@ -23,6 +23,7 @@ public class UnitOfWork : IUnitOfWork
     private IPasswordResetRepository? _passwordResets;
     private IPasswordHistoryRepository? _passwordHistories;
     private IMfaRecoveryCodeRepository? _mfaRecoveryCodes;
+    private IRoleRepository? _roles;
 
     private readonly IMemoryCache _cache;
     private readonly ILoggerFactory _loggerFactory;
@@ -42,6 +43,7 @@ public class UnitOfWork : IUnitOfWork
     public IPasswordResetRepository PasswordResets => _passwordResets ??= new PasswordResetRepository(_context);
     public IPasswordHistoryRepository PasswordHistories => _passwordHistories ??= new PasswordHistoryRepository(_context);
     public IMfaRecoveryCodeRepository MfaRecoveryCodes => _mfaRecoveryCodes ??= new MfaRecoveryCodeRepository(_context);
+    public IRoleRepository Roles => _roles ??= new RoleRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => await _context.SaveChangesAsync(cancellationToken);
