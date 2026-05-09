@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SS.AuthService.Application.Roles.Commands;
 using SS.AuthService.Application.Roles.Queries;
+using SS.AuthService.Application.RoleMenus.Commands;
+using SS.AuthService.Application.RoleMenus.Queries;
+using SS.AuthService.Application.RoleMenus.DTOs;
 using SS.AuthService.Infrastructure.Authentication;
 
 namespace SS.AuthService.API.Controllers;
@@ -75,6 +78,29 @@ public class RolesController : ControllerBase
     public async Task<IActionResult> Delete(Guid publicId)
     {
         var result = await _mediator.Send(new DeleteRoleCommand(publicId));
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorCode == "RoleNotFound") return NotFound();
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+
+        return NoContent();
+    }
+
+    [HttpGet("{publicId:guid}/permissions")]
+    [AuthorizePermission("RoleManagement", "Read")]
+    public async Task<IActionResult> GetPermissions(Guid publicId)
+    {
+        var result = await _mediator.Send(new GetRolePermissionsQuery(publicId));
+        if (result == null) return NotFound();
+        return Ok(result);
+    }
+
+    [HttpPut("{publicId:guid}/permissions")]
+    [AuthorizePermission("RoleManagement", "Update")]
+    public async Task<IActionResult> SyncPermissions(Guid publicId, [FromBody] List<SyncRolePermissionInput> permissions)
+    {
+        var result = await _mediator.Send(new SyncRolePermissionsCommand(publicId, permissions));
         if (!result.IsSuccess)
         {
             if (result.ErrorCode == "RoleNotFound") return NotFound();

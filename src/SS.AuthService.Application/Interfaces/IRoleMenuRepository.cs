@@ -7,4 +7,12 @@ public interface IRoleMenuRepository
     /// Menggunakan query join antara role_menu dan menus.
     /// </summary>
     Task<bool> HasPermissionAsync(int roleId, string menuPath, string action, CancellationToken ct = default);
+
+    Task<List<SS.AuthService.Domain.Entities.RoleMenu>> GetByRoleIdAsync(int roleId, CancellationToken ct = default);
+
+    void Add(SS.AuthService.Domain.Entities.RoleMenu entity);
+
+    void RemoveRange(IEnumerable<SS.AuthService.Domain.Entities.RoleMenu> entities);
+
+    void InvalidateCache(int roleId);
 }

@@ -286,7 +286,7 @@ public partial class AppDbContext : DbContext, IDataProtectionKeyContext
 
             entity.ToTable("role_menu");
 
-            entity.HasIndex(e => new { e.RoleId, e.MenuId }, "idx_role_menu_role_menu");
+            entity.HasIndex(e => new { e.RoleId, e.MenuId }, "idx_role_menu_role_menu").IsUnique();
 
             entity.Property(e => e.Id)
                 .UseIdentityAlwaysColumn()

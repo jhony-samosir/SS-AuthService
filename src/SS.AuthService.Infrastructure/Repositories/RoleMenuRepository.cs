@@ -21,7 +21,9 @@ public class RoleMenuRepository : IRoleMenuRepository
 
     public async Task<bool> HasPermissionAsync(int roleId, string menuPath, string action, CancellationToken ct = default)
     {
-        string cacheKey = $"perm:{roleId}:{menuPath}:{action}";
+        // Use versioning to support wildcard-like invalidation for a specific role
+        int version = _cache.GetOrCreate($"ver:role:{roleId}", _ => 0);
+        string cacheKey = $"perm:{roleId}:{version}:{menuPath}:{action}";
 
         if (_cache.TryGetValue(cacheKey, out bool hasPermission))
         {
@@ -53,9 +55,34 @@ public class RoleMenuRepository : IRoleMenuRepository
             };
         }
 
-        // Cache hasil selama 15 menit untuk mengurangi beban DB
+        // Cache hasil selama 15 menit
         _cache.Set(cacheKey, result, TimeSpan.FromMinutes(15));
         
         return result;
+    }
+
+    public async Task<List<SS.AuthService.Domain.Entities.RoleMenu>> GetByRoleIdAsync(int roleId, CancellationToken ct = default)
+    {
+        return await _context.RoleMenus
+            .Include(rm => rm.Menu)
+            .Where(rm => rm.RoleId == roleId && rm.DeletedAt == null)
+            .ToListAsync(ct);
+    }
+
+    public void Add(SS.AuthService.Domain.Entities.RoleMenu entity)
+    {
+        _context.RoleMenus.Add(entity);
+    }
+
+    public void RemoveRange(IEnumerable<SS.AuthService.Domain.Entities.RoleMenu> entities)
+    {
+        _context.RoleMenus.RemoveRange(entities);
+    }
+
+    public void InvalidateCache(int roleId)
+    {
+        _logger.LogInformation("Invalidating permission cache for RoleId: {RoleId} by incrementing version.", roleId);
+        int version = _cache.GetOrCreate($"ver:role:{roleId}", _ => 0);
+        _cache.Set($"ver:role:{roleId}", version + 1);
     }
 }

@@ -23,6 +23,13 @@ public class MenuRepository : IMenuRepository
             .Include(m => m.Parent)
             .FirstOrDefaultAsync(m => m.PublicId == publicId && m.DeletedAt == null, cancellationToken);
 
+    public async Task<List<Menu>> GetByPublicIdsAsync(IEnumerable<Guid> publicIds, CancellationToken cancellationToken = default)
+    {
+        return await _context.Menus
+            .Where(m => publicIds.Contains(m.PublicId) && m.DeletedAt == null)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<List<Menu>> GetAllAsync(bool includeDeleted = false, CancellationToken cancellationToken = default)
     {
         var query = _context.Menus.AsNoTracking();

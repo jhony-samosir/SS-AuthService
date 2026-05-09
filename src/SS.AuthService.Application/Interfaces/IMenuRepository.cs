@@ -8,6 +8,8 @@ public interface IMenuRepository
     
     Task<Menu?> GetByPublicIdAsync(Guid publicId, CancellationToken cancellationToken = default);
     
+    Task<List<Menu>> GetByPublicIdsAsync(IEnumerable<Guid> publicIds, CancellationToken cancellationToken = default);
+    
     Task<List<Menu>> GetAllAsync(bool includeDeleted = false, CancellationToken cancellationToken = default);
     
     Task<List<Menu>> GetTreeAsync(CancellationToken cancellationToken = default);
