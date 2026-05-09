@@ -41,4 +41,20 @@ public class AuthSessionRepository : IAuthSessionRepository
                 .SetProperty(b => b.UpdatedAt, DateTime.UtcNow), 
                 cancellationToken);
     }
+
+    public async Task<List<AuthSession>> GetByUserIdAsync(int userId, int limit = 50, CancellationToken cancellationToken = default)
+    {
+        return await _context.AuthSessions
+            .AsNoTracking()
+            .Where(s => s.UserId == userId)
+            .OrderByDescending(s => s.CreatedAt)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<AuthSession?> GetByPublicIdAsync(Guid publicId, CancellationToken cancellationToken = default)
+    {
+        return await _context.AuthSessions
+            .FirstOrDefaultAsync(s => s.PublicId == publicId, cancellationToken);
+    }
 }

@@ -216,6 +216,56 @@ public class UserController : ControllerBase
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Mengambil daftar sesi aktif user.
+    /// </summary>
+    [HttpGet("{publicId:guid}/sessions")]
+    [AuthorizePermission("UserManagement", "Read")]
+    public async Task<IActionResult> GetSessions(Guid publicId)
+    {
+        var result = await _mediator.Send(new GetUserSessionsQuery(publicId));
+        if (result == null)
+        {
+            return NotFound(new { message = "User not found." });
+        }
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Mencabut semua sesi user.
+    /// </summary>
+    [HttpDelete("{publicId:guid}/sessions")]
+    [AuthorizePermission("UserManagement", "Update")]
+    public async Task<IActionResult> RevokeAllSessions(Guid publicId)
+    {
+        var result = await _mediator.Send(new RevokeAllUserSessionsCommand(publicId));
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorCode == "UserNotFound") return NotFound();
+            return BadRequest(new { message = result.ErrorMessage, code = result.ErrorCode });
+        }
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Mencabut satu sesi spesifik user.
+    /// </summary>
+    [HttpDelete("{publicId:guid}/sessions/{sessionPublicId:guid}")]
+    [AuthorizePermission("UserManagement", "Update")]
+    public async Task<IActionResult> RevokeSession(Guid publicId, Guid sessionPublicId)
+    {
+        var result = await _mediator.Send(new RevokeUserSessionCommand(publicId, sessionPublicId));
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorCode is "UserNotFound" or "SessionNotFound") return NotFound();
+            return BadRequest(new { message = result.ErrorMessage, code = result.ErrorCode });
+        }
+
+        return NoContent();
+    }
 }
 
 public record LockUserRequest(DateTime? LockedUntil, int? LockDurationMinutes);
