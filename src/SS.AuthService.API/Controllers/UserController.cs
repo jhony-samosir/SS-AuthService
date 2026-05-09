@@ -22,6 +22,20 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
+    /// Mengambil profil user yang sedang login.
+    /// </summary>
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMe()
+    {
+        var result = await _mediator.Send(new GetMyProfileQuery());
+        if (result == null)
+        {
+            return Unauthorized();
+        }
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Mengambil daftar user dengan filter, sort, dan pagination.
     /// </summary>
     [HttpGet]
