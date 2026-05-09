@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SS.AuthService.Application.Users.Commands;
 using SS.AuthService.Application.Users.Queries;
 using SS.AuthService.Infrastructure.Authentication;
@@ -265,6 +266,27 @@ public class UserController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    /// <summary>
+    /// Mengirim ulang email verifikasi ke user.
+    /// </summary>
+    [HttpPost("{publicId:guid}/resend-verification")]
+    [AuthorizePermission("UserManagement", "Update")]
+    [EnableRateLimiting("AuthLimiter")]
+    public async Task<IActionResult> ResendVerification(Guid publicId)
+    {
+        var result = await _mediator.Send(new ResendVerificationEmailCommand(publicId));
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorCode == "UserNotFound") return NotFound();
+            if (result.ErrorCode == "UserAlreadyVerified") return Conflict(new { message = result.ErrorMessage, code = result.ErrorCode });
+            if (result.ErrorCode == "ThrottlingActive") return StatusCode(429, new { message = result.ErrorMessage, code = result.ErrorCode });
+            if (result.ErrorCode == "UserInactive") return BadRequest(new { message = result.ErrorMessage, code = result.ErrorCode });
+            return BadRequest(new { message = result.ErrorMessage, code = result.ErrorCode });
+        }
+
+        return Ok(new { message = "Verification email has been resent." });
     }
 }
 

@@ -12,4 +12,10 @@ public interface IEmailVerificationRepository
 
     /// <summary>Hapus record verifikasi.</summary>
     void Remove(EmailVerification entity);
+
+    /// <summary>Hapus semua token verifikasi untuk user tertentu.</summary>
+    Task RemoveAllByUserIdAsync(int userId, CancellationToken cancellationToken = default);
+
+    /// <summary>Ambil token verifikasi terbaru untuk user tertentu.</summary>
+    Task<EmailVerification?> GetLatestByUserIdAsync(int userId, CancellationToken cancellationToken = default);
 }

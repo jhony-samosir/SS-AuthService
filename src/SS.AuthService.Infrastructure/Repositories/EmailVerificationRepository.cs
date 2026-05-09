@@ -29,4 +29,19 @@ public class EmailVerificationRepository : IEmailVerificationRepository
     {
         _context.EmailVerifications.Remove(entity);
     }
+
+    public async Task RemoveAllByUserIdAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        await _context.EmailVerifications
+            .Where(v => v.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public async Task<EmailVerification?> GetLatestByUserIdAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.EmailVerifications
+            .Where(v => v.UserId == userId)
+            .OrderByDescending(v => v.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 }
