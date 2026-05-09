@@ -88,7 +88,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             // 7. Masukkan email ke antrean background (UX Best Practice)
-            await _emailQueue.QueueEmailAsync(new EmailTask(normalizedEmail, verificationToken));
+            await _emailQueue.QueueEmailAsync(new EmailTask(normalizedEmail, verificationToken, null, EmailType.Verification));
 
             return new RegisterResult(true, EnumerationSafeMessage);
         }

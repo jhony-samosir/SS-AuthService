@@ -32,4 +32,17 @@ public class MfaRecoveryCodeRepository : IMfaRecoveryCodeRepository
     {
         _context.MfaRecoveryCodes.Update(code);
     }
+
+    public async Task RemoveAllByUserIdAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        await _context.MfaRecoveryCodes
+            .Where(x => x.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public async Task<int> CountByUserIdAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.MfaRecoveryCodes
+            .CountAsync(x => x.UserId == userId && !x.IsUsed, cancellationToken);
+    }
 }

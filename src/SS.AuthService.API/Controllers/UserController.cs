@@ -288,6 +288,63 @@ public class UserController : ControllerBase
 
         return Ok(new { message = "Verification email has been resent." });
     }
+
+    /// <summary>
+    /// Menonaktifkan MFA untuk user (Audit/Recovery).
+    /// </summary>
+    [HttpPut("{publicId:guid}/mfa/disable")]
+    [AuthorizePermission("UserManagement", "Update")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DisableMfa(Guid publicId)
+    {
+        var result = await _mediator.Send(new DisableUserMfaCommand(publicId));
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorCode == "UserNotFound") return NotFound();
+            return BadRequest(new { message = result.ErrorMessage, code = result.ErrorCode });
+        }
+
+        return Ok(new { message = "MFA has been disabled for this user." });
+    }
+
+    /// <summary>
+    /// Membuat ulang kode pemulihan MFA untuk user. Kode baru akan dikirimkan langsung ke email user demi keamanan.
+    /// </summary>
+    [HttpPost("{publicId:guid}/mfa/recovery-codes/regenerate")]
+    [AuthorizePermission("UserManagement", "Update")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RegenerateRecoveryCodes(Guid publicId)
+    {
+        var result = await _mediator.Send(new RegenerateRecoveryCodesCommand(publicId));
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorCode == "UserNotFound") return NotFound();
+            return BadRequest(new { message = result.ErrorMessage, code = result.ErrorCode });
+        }
+
+        return Ok(new { message = "MFA recovery codes have been regenerated and sent to the user's email securely." });
+    }
+
+    /// <summary>
+    /// Mengambil info status MFA user.
+    /// </summary>
+    [HttpGet("{publicId:guid}/mfa")]
+    [AuthorizePermission("UserManagement", "Read")]
+    public async Task<IActionResult> GetMfaInfo(Guid publicId)
+    {
+        var result = await _mediator.Send(new GetUserMfaInfoQuery(publicId));
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorCode == "UserNotFound") return NotFound();
+            return BadRequest(new { message = result.ErrorMessage, code = result.ErrorCode });
+        }
+
+        return Ok(result.Value);
+    }
 }
 
 public record LockUserRequest(DateTime? LockedUntil, int? LockDurationMinutes);

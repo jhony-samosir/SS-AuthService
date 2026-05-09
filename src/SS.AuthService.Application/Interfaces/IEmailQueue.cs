@@ -1,6 +1,7 @@
 namespace SS.AuthService.Application.Interfaces;
 
-public record EmailTask(string To, string Token);
+public enum EmailType { Verification, MfaRecoveryCodes }
+public record EmailTask(string To, string? Token, IEnumerable<string>? Codes, EmailType Type);
 
 public interface IEmailQueue
 {

@@ -35,8 +35,17 @@ public class EmailBackgroundWorker : BackgroundService
                 using var scope = _serviceProvider.CreateScope();
                 var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
-                _logger.LogInformation("Processing email for {Email}", emailTask.To);
-                await emailService.SendVerificationEmailAsync(emailTask.To, emailTask.Token);
+                _logger.LogInformation("Processing {EmailType} email for {Email}", emailTask.Type, emailTask.To);
+                
+                if (emailTask.Type == EmailType.Verification)
+                {
+                    await emailService.SendVerificationEmailAsync(emailTask.To, emailTask.Token!);
+                }
+                else if (emailTask.Type == EmailType.MfaRecoveryCodes)
+                {
+                    await emailService.SendMfaRecoveryCodesEmailAsync(emailTask.To, emailTask.Codes!);
+                }
+
                 _logger.LogInformation("Email successfully sent to {Email}", emailTask.To);
             }
             catch (OperationCanceledException)

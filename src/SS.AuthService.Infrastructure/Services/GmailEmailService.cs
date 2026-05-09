@@ -66,4 +66,36 @@ public class GmailEmailService : IEmailService
             await client.DisconnectAsync(true);
         });
     }
+
+    public async Task SendMfaRecoveryCodesEmailAsync(string email, IEnumerable<string> codes)
+    {
+        var htmlBody = $@"
+            <h2>New MFA Recovery Codes</h2>
+            <p>Admin has regenerated your MFA recovery codes. Please store these in a secure place:</p>
+            <ul>
+                {string.Join("", codes.Select(c => $"<li><code>{c}</code></li>"))}
+            </ul>
+            <p>These codes replace any previous recovery codes.</p>";
+
+        var message = new MimeMessage();
+        message.From.Add(new MailboxAddress("SamStore-Security", _options.FromEmail));
+        message.To.Add(new MailboxAddress("", email));
+        message.Subject = "MFA Recovery Codes Regenerated - SS-AuthService";
+
+        var builder = new BodyBuilder { HtmlBody = htmlBody };
+        message.Body = builder.ToMessageBody();
+
+        var retryPolicy = Policy
+            .Handle<Exception>()
+            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+
+        await retryPolicy.ExecuteAsync(async () =>
+        {
+            using var client = new SmtpClient();
+            await client.ConnectAsync(_options.SmtpServer, _options.Port, SecureSocketOptions.StartTls);
+            await client.AuthenticateAsync(_options.UserName, _options.Password);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
+        });
+    }
 }

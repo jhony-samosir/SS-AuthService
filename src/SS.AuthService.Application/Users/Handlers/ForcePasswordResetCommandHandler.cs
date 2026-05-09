@@ -56,7 +56,7 @@ public class ForcePasswordResetCommandHandler : IRequestHandler<ForcePasswordRes
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // 3. Queue Email
-        await _emailQueue.QueueEmailAsync(new EmailTask(user.Email, token));
+        await _emailQueue.QueueEmailAsync(new EmailTask(user.Email, token, null, EmailType.Verification));
 
         return Result.Success();
     }

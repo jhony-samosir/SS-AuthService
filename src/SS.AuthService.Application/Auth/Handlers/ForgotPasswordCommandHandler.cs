@@ -56,7 +56,7 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
             await _unitOfWork.PasswordResets.AddAsync(passwordReset, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await _emailQueue.QueueEmailAsync(new EmailTask(user.Email, token));
+            await _emailQueue.QueueEmailAsync(new EmailTask(user.Email, token, null, EmailType.Verification));
         }
         else
         {

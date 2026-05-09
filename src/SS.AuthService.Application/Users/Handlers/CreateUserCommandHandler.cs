@@ -101,7 +101,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             // 5. Queue Email (After Commit to ensure DB consistency)
-            await _emailQueue.QueueEmailAsync(new EmailTask(user.Email, token));
+            await _emailQueue.QueueEmailAsync(new EmailTask(user.Email, token, null, EmailType.Verification));
 
             return Result<Guid>.Success(user.PublicId);
         }

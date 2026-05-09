@@ -73,7 +73,7 @@ public class ResendVerificationEmailCommandHandler : IRequestHandler<ResendVerif
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             // 3. Queue email
-            await _emailQueue.QueueEmailAsync(new EmailTask(user.Email, verificationToken));
+            await _emailQueue.QueueEmailAsync(new EmailTask(user.Email, verificationToken, null, EmailType.Verification));
 
             _logger.LogWarning("SECURITY AUDIT: Admin {AdminId} resent verification email to User {TargetUserId} ({Email})", 
                 _currentUserService.UserId, user.Id, user.Email);
