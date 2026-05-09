@@ -31,4 +31,7 @@ public partial class RoleMenu : IAuditableEntity, ISoftDelete
     public DateTime? DeletedAt { get; set; }
 
     public int? DeletedBy { get; set; }
+    
+    public virtual Role Role { get; set; } = null!;
+    public virtual Menu Menu { get; set; } = null!;
 }

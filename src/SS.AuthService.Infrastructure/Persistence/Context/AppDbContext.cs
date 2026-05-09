@@ -141,6 +141,8 @@ public partial class AppDbContext : DbContext, IDataProtectionKeyContext
 
             entity.HasIndex(e => e.ParentId, "idx_menus_parent_id");
 
+            entity.HasIndex(e => e.Path, "menus_path_key").IsUnique();
+
             entity.HasIndex(e => e.PublicId, "menus_public_id_key").IsUnique();
 
             entity.Property(e => e.Id)
@@ -170,6 +172,10 @@ public partial class AppDbContext : DbContext, IDataProtectionKeyContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UpdatedBy).HasColumnName("updated_by");
+
+            entity.HasOne(d => d.Parent)
+                .WithMany(p => p.Children)
+                .HasForeignKey(d => d.ParentId);
         });
 
         modelBuilder.Entity<MfaRecoveryCode>(entity =>
@@ -303,6 +309,16 @@ public partial class AppDbContext : DbContext, IDataProtectionKeyContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UpdatedBy).HasColumnName("updated_by");
+
+            entity.HasOne(d => d.Menu)
+                .WithMany(p => p.RoleMenus)
+                .HasForeignKey(d => d.MenuId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(d => d.Role)
+                .WithMany(p => p.RoleMenus)
+                .HasForeignKey(d => d.RoleId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         modelBuilder.Entity<SocialAccount>(entity =>

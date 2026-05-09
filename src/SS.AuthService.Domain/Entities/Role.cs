@@ -25,4 +25,7 @@ public partial class Role : IAuditableEntity, ISoftDelete
     public DateTime? DeletedAt { get; set; }
 
     public int? DeletedBy { get; set; }
+    
+    public virtual ICollection<User> Users { get; set; } = new List<User>();
+    public virtual ICollection<RoleMenu> RoleMenus { get; set; } = new List<RoleMenu>();
 }

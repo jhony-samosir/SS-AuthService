@@ -40,6 +40,8 @@ public static class DependencyInjection
         services.AddScoped<IAuthSessionRepository, AuthSessionRepository>();
         services.AddScoped<IEmailVerificationRepository, EmailVerificationRepository>();
         services.AddScoped<IRoleMenuRepository, RoleMenuRepository>();
+        services.AddScoped<IMenuRepository, MenuRepository>();
+        services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
         services.AddScoped<IPasswordHistoryRepository, PasswordHistoryRepository>();
 
