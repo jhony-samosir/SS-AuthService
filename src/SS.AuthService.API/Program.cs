@@ -13,6 +13,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
 using SS.AuthService.Infrastructure.Diagnostics;
 using SS.AuthService.Infrastructure.Security;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,46 +25,28 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("DefaultPolicy", policy =>
     {
-        // Hanya izinkan domain spesifik (ganti dengan URL frontend asli di production)
-        policy.WithOrigins("https://localhost:3000") 
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+        var securitySettings = builder.Configuration.GetSection("SecuritySettings").Get<SS.AuthService.Application.Common.Settings.SecuritySettings>();
+        var origins = securitySettings?.AllowedCorsOrigins ?? Array.Empty<string>();
+
+        if (origins.Length > 0)
+        {
+            policy.WithOrigins(origins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+        else
+        {
+            // Default for local development if not configured
+            policy.WithOrigins("https://localhost:5000")
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
     });
 });
 
-// 2. Configure Rate Limiting
-builder.Services.AddRateLimiter(options =>
-{
-    // Policy ketat untuk Login/Register (Berbasis IP)
-    options.AddPolicy("StrictPolicy", context =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                AutoReplenishment = true,
-                PermitLimit = 5, // Max 5 request per 15 menit per IP
-                Window = TimeSpan.FromMinutes(15),
-                QueueLimit = 0
-            }));
-
-    // Global policy
-    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                AutoReplenishment = true,
-                PermitLimit = 100,
-                Window = TimeSpan.FromMinutes(1)
-            }));
-
-    options.OnRejected = async (context, token) =>
-    {
-        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-        await context.HttpContext.Response.WriteAsJsonAsync(new { message = "Too many requests. Please try again later." }, token);
-    };
-});
+// 2. Rate Limiting is configured in Infrastructure layer via AddSecurityRateLimiting()
 
 // Add services to the container.
 builder.Services.AddControllers(options =>
@@ -109,6 +92,35 @@ builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProv
 builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 builder.Services.AddAuthorization();
 
+// 5. Configure Forwarded Headers for YARP/Proxy
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    
+    var securitySettings = builder.Configuration.GetSection("SecuritySettings").Get<SS.AuthService.Application.Common.Settings.SecuritySettings>();
+    
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+
+    if (securitySettings?.TrustedNetworks != null)
+    {
+        foreach (var network in securitySettings.TrustedNetworks)
+        {
+            if (System.Net.IPNetwork.TryParse(network, out var ipNetwork))
+                options.KnownIPNetworks.Add(ipNetwork);
+        }
+    }
+
+    if (securitySettings?.TrustedProxies != null)
+    {
+        foreach (var proxy in securitySettings.TrustedProxies)
+        {
+            if (System.Net.IPAddress.TryParse(proxy, out var ipAddress))
+                options.KnownProxies.Add(ipAddress);
+        }
+    }
+});
+
 var app = builder.Build();
 
 // 3. Configure Security Headers (Helmet-like)
@@ -129,6 +141,12 @@ app.UseSecurityHeaders(new HeaderPolicyCollection()
 
 app.UseMiddleware<ExceptionMiddleware>();
 
+app.UseForwardedHeaders();
+
+// NOTE: UsePathBase is removed to avoid conflict with [Route("api/[controller]")] 
+// which already handles the /api/auth prefix. This ensures /api/auth/login maps 
+// correctly to AuthController.Login.
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -144,6 +162,11 @@ app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// 🛡️ Identity Propagation Policy:
+// This service only trusts identity information from validated JWT tokens.
+// It DOES NOT use 'X-User-*' headers from proxies to prevent spoofing risks.
+// Internal services must propagate the original JWT for identity verification.
 
 // 🏥 Health Checks & Security
 app.UseMiddleware<InternalHealthCheckMiddleware>();

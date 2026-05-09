@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.IO;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SS.AuthService.Application.Interfaces;
@@ -12,7 +13,7 @@ namespace SS.AuthService.Infrastructure.Services;
 
 /// <summary>
 /// Implementasi pembuatan JWT Access Token dan Refresh Token.
-/// Menggunakan kunci simetris untuk penandatanganan token.
+/// Menggunakan kunci asimetris (RSA) untuk penandatanganan token.
 /// </summary>
 public class JwtProvider : IJwtProvider
 {
@@ -31,21 +32,10 @@ public class JwtProvider : IJwtProvider
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new("full_name", user.FullName),
-            new(ClaimTypes.Role, user.RoleId.ToString()) // Sederhana, bisa dikembangkan ke Role Name
+            new(ClaimTypes.Role, user.RoleId.ToString())
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Secret));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var token = new JwtSecurityToken(
-            issuer: _options.Issuer,
-            audience: _options.Audience,
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_options.AccessTokenExpirationMinutes),
-            signingCredentials: creds
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return GenerateToken(claims, _options.AccessTokenExpirationMinutes);
     }
 
     public string GenerateRefreshToken()
@@ -62,31 +52,23 @@ public class JwtProvider : IJwtProvider
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Secret));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var token = new JwtSecurityToken(
-            issuer: _options.Issuer,
-            audience: _options.Audience,
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(5), // Short-lived for challenge
-            signingCredentials: creds
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return GenerateToken(claims, 5); // Short-lived for challenge
     }
 
     public int? ValidateMfaChallengeToken(string token)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.UTF8.GetBytes(_options.Secret);
-
+        
         try
         {
+            var rsa = RSA.Create();
+            var pemContent = File.ReadAllText(_options.PublicKeyPath);
+            rsa.ImportFromPem(pemContent);
+
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
+                IssuerSigningKey = new RsaSecurityKey(rsa),
                 ValidateIssuer = true,
                 ValidIssuer = _options.Issuer,
                 ValidateAudience = true,
@@ -106,5 +88,25 @@ public class JwtProvider : IJwtProvider
         {
             return null;
         }
+    }
+
+    private string GenerateToken(IEnumerable<Claim> claims, int expirationMinutes)
+    {
+        var rsa = RSA.Create();
+        var pemContent = File.ReadAllText(_options.PrivateKeyPath);
+        rsa.ImportFromPem(pemContent);
+
+        var key = new RsaSecurityKey(rsa);
+        var creds = new SigningCredentials(key, SecurityAlgorithms.RsaSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: _options.Issuer,
+            audience: _options.Audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(expirationMinutes),
+            signingCredentials: creds
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

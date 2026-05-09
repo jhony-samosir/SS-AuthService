@@ -20,6 +20,10 @@ public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions
 
         var jwtSettings = _jwtOptions.Value;
 
+        var rsa = System.Security.Cryptography.RSA.Create();
+        var pemContent = System.IO.File.ReadAllText(jwtSettings.PublicKeyPath);
+        rsa.ImportFromPem(pemContent);
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -28,8 +32,9 @@ public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtSettings.Issuer,
             ValidAudience = jwtSettings.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
-            ClockSkew = TimeSpan.Zero // Strict expiration (no grace period)
+            IssuerSigningKey = new RsaSecurityKey(rsa),
+            ValidAlgorithms = new[] { SecurityAlgorithms.RsaSha256 },
+            ClockSkew = TimeSpan.FromSeconds(30) // Allow small clock drift between services
         };
     }
 

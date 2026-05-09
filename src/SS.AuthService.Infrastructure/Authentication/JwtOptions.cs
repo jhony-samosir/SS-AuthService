@@ -6,8 +6,6 @@ public class JwtOptions
 {
     public const string SectionName = "Jwt";
 
-    [Required]
-    [MinLength(32, ErrorMessage = "Secret key must be at least 32 characters long for security.")]
     public string Secret { get; init; } = string.Empty;
 
     [Required]
@@ -15,6 +13,9 @@ public class JwtOptions
 
     [Required]
     public string Audience { get; init; } = string.Empty;
+
+    public string PrivateKeyPath { get; init; } = string.Empty;
+    public string PublicKeyPath { get; init; } = string.Empty;
 
     public int AccessTokenExpirationMinutes { get; init; } = 15;
     public int RefreshTokenExpirationDays { get; init; } = 7;

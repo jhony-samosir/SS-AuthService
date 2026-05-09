@@ -13,6 +13,12 @@ public static class HealthCheckExtensions
 {
     public static IServiceCollection AddSecurityHealthChecks(this IServiceCollection services, IConfiguration configuration)
     {
+        var diskPath = configuration["SecuritySettings:HealthCheckDiskPath"];
+        if (string.IsNullOrEmpty(diskPath))
+        {
+            diskPath = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? "C:\\" : "/";
+        }
+
         services.AddHealthChecks()
             .AddNpgSql(
                 connectionString: configuration.GetConnectionString("SSAuthDB")!,
@@ -20,7 +26,7 @@ public static class HealthCheckExtensions
                 tags: new[] { "db", "sql", "postgresql" })
             .AddWorkingSetHealthCheck(1024 * 1024 * 1024, name: "Memory")
             .AddDiskStorageHealthCheck(setup => 
-                setup.AddDrive("C:\\", 1024 * 1024 * 1024), // Min 1GB
+                setup.AddDrive(diskPath, 1024 * 1024 * 1024), // Min 1GB
                 name: "Disk");
 
         return services;
