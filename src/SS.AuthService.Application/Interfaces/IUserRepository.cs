@@ -31,4 +31,7 @@ public interface IUserRepository
 
     /// <summary>Hard delete (untuk cleanup atau jika benar-benar dibutuhkan).</summary>
     void Delete(User entity);
+
+    /// <summary>Bulk fetch users by their internal IDs.</summary>
+    Task<List<User>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default);
 }

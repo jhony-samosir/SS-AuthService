@@ -112,4 +112,12 @@ public class UserRepository : IUserRepository
 
     public void Delete(User entity)
         => _context.Users.Remove(entity);
+
+    public async Task<List<User>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .AsNoTracking()
+            .Where(u => ids.Contains(u.Id) && u.DeletedAt == null)
+            .ToListAsync(cancellationToken);
+    }
 }
