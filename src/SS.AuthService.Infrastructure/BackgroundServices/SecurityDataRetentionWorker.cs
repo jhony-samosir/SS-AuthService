@@ -68,6 +68,7 @@ public class SecurityDataRetentionWorker : BackgroundService
                 deleted = await context.AuthSessions
                     .IgnoreQueryFilters()
                     .Where(x => x.IsRevoked && x.ExpiresAt < sessionThreshold)
+                    .OrderBy(x => x.Id)
                     .Take(batchSize)
                     .ExecuteDeleteAsync(ct);
                 totalDeletedSessions += deleted;
@@ -82,6 +83,7 @@ public class SecurityDataRetentionWorker : BackgroundService
                 deleted = await context.EmailVerifications
                     .IgnoreQueryFilters()
                     .Where(x => x.ExpiresAt < verificationThreshold)
+                    .OrderBy(x => x.Id)
                     .Take(batchSize)
                     .ExecuteDeleteAsync(ct);
                 totalDeletedEmailVer += deleted;
@@ -93,6 +95,7 @@ public class SecurityDataRetentionWorker : BackgroundService
                 deleted = await context.PasswordResets
                     .IgnoreQueryFilters()
                     .Where(x => x.ExpiresAt < verificationThreshold)
+                    .OrderBy(x => x.Id)
                     .Take(batchSize)
                     .ExecuteDeleteAsync(ct);
                 totalDeletedPassRes += deleted;
@@ -106,6 +109,7 @@ public class SecurityDataRetentionWorker : BackgroundService
                 deleted = await context.LoginAttempts
                     .IgnoreQueryFilters()
                     .Where(x => x.AttemptedAt < loginAttemptThreshold)
+                    .OrderBy(x => x.Id)
                     .Take(batchSize)
                     .ExecuteDeleteAsync(ct);
                 totalDeletedLoginAtt += deleted;
