@@ -68,6 +68,40 @@ public class RoleMenuRepository : IRoleMenuRepository
             .Where(rm => rm.RoleId == roleId && rm.DeletedAt == null)
             .ToListAsync(ct);
     }
+    
+    public async Task<List<string>> GetPermissionsByRoleIdAsync(int roleId, CancellationToken ct = default)
+    {
+        // Use versioning to support wildcard-like invalidation for a specific role
+        int version = _cache.GetOrCreate($"ver:role:{roleId}", _ => 0);
+        string cacheKey = $"perm_list:{roleId}:{version}";
+
+        if (_cache.TryGetValue(cacheKey, out List<string>? cachedPermissions))
+        {
+            return cachedPermissions ?? new List<string>();
+        }
+
+        _logger.LogInformation("Cache miss for permission list of RoleId: {RoleId}. Querying database.", roleId);
+
+        var roleMenus = await _context.RoleMenus
+            .AsNoTracking()
+            .Include(rm => rm.Menu)
+            .Where(rm => rm.RoleId == roleId && rm.DeletedAt == null)
+            .ToListAsync(ct);
+
+        var permissions = new List<string>();
+        foreach (var rm in roleMenus)
+        {
+            if (rm.CanRead) permissions.Add($"{rm.Menu.Name}:Read");
+            if (rm.CanCreate) permissions.Add($"{rm.Menu.Name}:Create");
+            if (rm.CanUpdate) permissions.Add($"{rm.Menu.Name}:Update");
+            if (rm.CanDelete) permissions.Add($"{rm.Menu.Name}:Delete");
+        }
+
+        // Cache hasil selama 15 menit
+        _cache.Set(cacheKey, permissions, TimeSpan.FromMinutes(15));
+        
+        return permissions;
+    }
 
     public void Add(SS.AuthService.Domain.Entities.RoleMenu entity)
     {

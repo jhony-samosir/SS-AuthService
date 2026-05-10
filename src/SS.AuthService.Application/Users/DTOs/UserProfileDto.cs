@@ -1,12 +1,16 @@
 using System;
+using System.Collections.Generic;
 
 namespace SS.AuthService.Application.Users.DTOs;
+
+public record UserRoleDto(Guid PublicId, string Name);
 
 public record UserProfileDto(
     Guid PublicId,
     string Email,
     string FullName,
-    string RoleName,
+    UserRoleDto Role,
+    List<string> Permissions,
     bool IsActive,
     bool MfaEnabled,
     bool IsEmailVerified,

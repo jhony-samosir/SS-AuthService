@@ -11,6 +11,8 @@ public interface IUserRepository
 
     Task<User?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
+    Task<User?> GetByIdWithRoleAsync(int id, CancellationToken cancellationToken = default);
+
     Task<User?> GetByPublicIdAsync(Guid publicId, CancellationToken cancellationToken = default);
 
     /// <summary>Tambah user baru ke context (belum SaveChanges).</summary>

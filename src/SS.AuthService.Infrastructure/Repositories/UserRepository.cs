@@ -18,13 +18,22 @@ public class UserRepository : IUserRepository
         => await _context.Users.AnyAsync(u => u.Email == email && u.DeletedAt == null, cancellationToken);
 
     public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
-        => await _context.Users.FirstOrDefaultAsync(u => u.Email == email && u.DeletedAt == null, cancellationToken);
+        => await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Email == email && u.DeletedAt == null, cancellationToken);
 
     public async Task<User?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         => await _context.Users.FirstOrDefaultAsync(u => u.Id == id && u.DeletedAt == null, cancellationToken);
 
+    public async Task<User?> GetByIdWithRoleAsync(int id, CancellationToken cancellationToken = default)
+        => await _context.Users
+            .AsNoTracking()
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Id == id && u.DeletedAt == null, cancellationToken);
+
     public async Task<User?> GetByPublicIdAsync(Guid publicId, CancellationToken cancellationToken = default)
         => await _context.Users
+            .AsNoTracking()
             .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.PublicId == publicId && u.DeletedAt == null, cancellationToken);
 

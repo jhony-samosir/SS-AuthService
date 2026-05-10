@@ -43,11 +43,17 @@ public class GetProfileQueryHandler : IRequestHandler<GetProfileQuery, UserProfi
                 request.LoggedInUserId, targetUser.Id, targetUser.PublicId);
         }
 
+        // Fetch permissions for the role (Cached)
+        var permissions = await _unitOfWork.RoleMenus.GetPermissionsByRoleIdAsync(targetUser.RoleId, cancellationToken);
+
         return new UserProfileDto(
             targetUser.PublicId,
             targetUser.Email,
             targetUser.FullName,
-            targetUser.Role?.Name ?? "Unknown",
+            targetUser.Role != null 
+                ? new UserRoleDto(targetUser.Role.PublicId, targetUser.Role.Name) 
+                : new UserRoleDto(Guid.Empty, "Unknown"),
+            permissions,
             targetUser.IsActive,
             targetUser.MfaEnabled,
             targetUser.EmailVerifiedAt != null,

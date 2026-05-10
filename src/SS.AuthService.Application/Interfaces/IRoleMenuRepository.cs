@@ -10,6 +10,11 @@ public interface IRoleMenuRepository
 
     Task<List<SS.AuthService.Domain.Entities.RoleMenu>> GetByRoleIdAsync(int roleId, CancellationToken ct = default);
 
+    /// <summary>
+    /// Mengambil daftar permission (Menu:Action) untuk role tertentu. Hasilnya di-cache.
+    /// </summary>
+    Task<List<string>> GetPermissionsByRoleIdAsync(int roleId, CancellationToken ct = default);
+
     void Add(SS.AuthService.Domain.Entities.RoleMenu entity);
 
     void RemoveRange(IEnumerable<SS.AuthService.Domain.Entities.RoleMenu> entities);

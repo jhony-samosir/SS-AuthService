@@ -22,11 +22,17 @@ public class GetUserDetailQueryHandler : IRequestHandler<GetUserDetailQuery, Use
         
         if (user == null) return null;
 
+        // Fetch permissions for the role (Cached)
+        var permissions = await _unitOfWork.RoleMenus.GetPermissionsByRoleIdAsync(user.RoleId, cancellationToken);
+
         return new UserProfileDto(
             user.PublicId,
             user.Email,
             user.FullName,
-            user.Role?.Name ?? "Unknown",
+            user.Role != null 
+                ? new UserRoleDto(user.Role.PublicId, user.Role.Name) 
+                : new UserRoleDto(Guid.Empty, "Unknown"),
+            permissions,
             user.IsActive,
             user.MfaEnabled,
             user.EmailVerifiedAt != null,
