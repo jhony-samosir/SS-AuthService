@@ -32,7 +32,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, LoginRe
     public async Task<LoginResult> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
         // 1. Cari User (Account Enumeration Prevention)
-        var user = await _unitOfWork.Users.GetByEmailAsync(request.Email.ToLower(), cancellationToken);
+        var user = await _unitOfWork.Users.GetByEmailWithRoleAsync(request.Email.ToLower(), cancellationToken);
         
         // Pesan error generik untuk semua kegagalan kredensial
         const string invalidCredentialsMessage = "Invalid credentials.";

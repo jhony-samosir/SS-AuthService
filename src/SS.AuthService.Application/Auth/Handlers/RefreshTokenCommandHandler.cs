@@ -62,7 +62,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, L
         }
 
         // 4. Get User to generate new tokens
-        var user = await _unitOfWork.Users.GetByIdAsync(session.UserId, cancellationToken);
+        var user = await _unitOfWork.Users.GetByIdWithRoleAsync(session.UserId, cancellationToken);
         if (user == null || !user.IsActive)
         {
             return new LoginResult(false, "User account is disabled or not found.", StatusCode: 401);

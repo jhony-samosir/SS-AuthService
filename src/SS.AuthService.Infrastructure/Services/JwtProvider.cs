@@ -35,6 +35,14 @@ public class JwtProvider : IJwtProvider
             new(ClaimTypes.Role, user.RoleId.ToString())
         };
 
+        if (user.Role == null)
+        {
+            throw new InvalidOperationException("Role data is required for JWT generation. Ensure Role is included when fetching User.");
+        }
+
+        claims.Add(new Claim("role_name", user.Role.Name));
+        claims.Add(new Claim("role_public_id", user.Role.PublicId.ToString()));
+
         return GenerateToken(claims, _options.AccessTokenExpirationMinutes);
     }
 

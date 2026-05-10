@@ -19,7 +19,11 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         => await _context.Users
-            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Email == email && u.DeletedAt == null, cancellationToken);
+
+    public async Task<User?> GetByEmailWithRoleAsync(string email, CancellationToken cancellationToken = default)
+        => await _context.Users
+            .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.Email == email && u.DeletedAt == null, cancellationToken);
 
     public async Task<User?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -27,7 +31,6 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByIdWithRoleAsync(int id, CancellationToken cancellationToken = default)
         => await _context.Users
-            .AsNoTracking()
             .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.Id == id && u.DeletedAt == null, cancellationToken);
 

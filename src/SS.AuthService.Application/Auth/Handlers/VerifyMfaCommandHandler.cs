@@ -38,7 +38,7 @@ public class VerifyMfaCommandHandler : IRequestHandler<VerifyMfaCommand, LoginRe
             return new LoginResult(false, "Invalid or expired MFA challenge.", StatusCode: 401);
         }
 
-        var user = await _unitOfWork.Users.GetByIdAsync(userId.Value, cancellationToken);
+        var user = await _unitOfWork.Users.GetByIdWithRoleAsync(userId.Value, cancellationToken);
         if (user == null || !user.IsActive || !user.MfaEnabled || string.IsNullOrEmpty(user.MfaSecret))
         {
             return new LoginResult(false, "Invalid user or MFA not enabled.", StatusCode: 401);
