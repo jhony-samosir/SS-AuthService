@@ -1,7 +1,9 @@
 using MediatR;
 using SS.AuthService.Application.Auth.Commands;
 using SS.AuthService.Application.Auth.DTOs;
+using SS.AuthService.Application.Common.Settings;
 using SS.AuthService.Application.Interfaces;
+using Microsoft.Extensions.Options;
 using SS.AuthService.Domain.Entities;
 using System;
 using System.Net;
@@ -16,17 +18,20 @@ public class VerifyMfaCommandHandler : IRequestHandler<VerifyMfaCommand, LoginRe
     private readonly IMfaService _mfaService;
     private readonly IJwtProvider _jwtProvider;
     private readonly ITokenHasher _tokenHasher;
+    private readonly SecuritySettings _securitySettings;
 
     public VerifyMfaCommandHandler(
         IUnitOfWork unitOfWork,
         IMfaService mfaService,
         IJwtProvider jwtProvider,
-        ITokenHasher tokenHasher)
+        ITokenHasher tokenHasher,
+        IOptionsSnapshot<SecuritySettings> securitySettings)
     {
         _unitOfWork = unitOfWork;
         _mfaService = mfaService;
         _jwtProvider = jwtProvider;
         _tokenHasher = tokenHasher;
+        _securitySettings = securitySettings.Value;
     }
 
     public async Task<LoginResult> Handle(VerifyMfaCommand request, CancellationToken cancellationToken)
@@ -44,10 +49,15 @@ public class VerifyMfaCommandHandler : IRequestHandler<VerifyMfaCommand, LoginRe
             return new LoginResult(false, "Invalid user or MFA not enabled.", StatusCode: 401);
         }
 
-        // 2. Security Check: Lockout status
+        // 2. Security Check: Lockout status & Role configuration
         if (user.LockedUntil.HasValue && user.LockedUntil.Value > DateTime.UtcNow)
         {
             return new LoginResult(false, "Account is locked. Please try again later.", StatusCode: 429);
+        }
+
+        if (user.Role == null)
+        {
+            return new LoginResult(false, "Account configuration error. Please contact administrator.", StatusCode: 500);
         }
 
         // 3. Verify TOTP Code
@@ -105,7 +115,7 @@ public class VerifyMfaCommandHandler : IRequestHandler<VerifyMfaCommand, LoginRe
                 RefreshTokenHash = _tokenHasher.Hash(refreshToken),
                 IpAddress = attempt.IpAddress,
                 DeviceInfo = request.DeviceInfo,
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                ExpiresAt = DateTime.UtcNow.AddDays(_securitySettings.RefreshTokenExpiryDays),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };

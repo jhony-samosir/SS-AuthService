@@ -46,12 +46,17 @@ public class AuthController : ControllerBase
 
         if (!result.Success)
         {
-            return Unauthorized(new { message = result.Message });
+            return StatusCode(result.StatusCode, new { message = result.Message });
         }
 
-        if (result.StatusCode == 202)
+        if (result.IsMfaRequired || result.StatusCode == 202)
         {
-            return Accepted(new { message = result.Message, mfaToken = result.AccessToken });
+            return Accepted(new 
+            { 
+                message = result.Message, 
+                mfaToken = result.AccessToken,
+                isMfaRequired = true 
+            });
         }
 
         // Set Refresh Token in HttpOnly Cookie for security

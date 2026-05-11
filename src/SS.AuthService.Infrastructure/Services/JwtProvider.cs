@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using SS.AuthService.Application.Interfaces;
 using SS.AuthService.Domain.Entities;
 using SS.AuthService.Infrastructure.Authentication;
+using SS.AuthService.Application.Common.Constants;
 
 namespace SS.AuthService.Infrastructure.Services;
 
@@ -18,30 +19,32 @@ namespace SS.AuthService.Infrastructure.Services;
 public class JwtProvider : IJwtProvider
 {
     private readonly JwtOptions _options;
+    private readonly IRsaKeyProvider _rsaKeyProvider;
 
-    public JwtProvider(IOptions<JwtOptions> options)
+    public JwtProvider(IOptions<JwtOptions> options, IRsaKeyProvider rsaKeyProvider)
     {
         _options = options.Value;
+        _rsaKeyProvider = rsaKeyProvider;
     }
 
     public string GenerateAccessToken(User user)
     {
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(ClaimConstants.UserId, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new("full_name", user.FullName),
-            new(ClaimTypes.Role, user.RoleId.ToString())
+            new(ClaimConstants.PublicId, user.PublicId.ToString()),
+            new(ClaimConstants.Role, user.RoleId.ToString())
         };
 
-        if (user.Role == null)
+        // Standardize: Add role names if available (Validation should happen in Application layer)
+        if (user.Role != null)
         {
-            throw new InvalidOperationException("Role data is required for JWT generation. Ensure Role is included when fetching User.");
+            claims.Add(new Claim("role_name", user.Role.Name));
+            claims.Add(new Claim("role_public_id", user.Role.PublicId.ToString()));
         }
-
-        claims.Add(new Claim("role_name", user.Role.Name));
-        claims.Add(new Claim("role_public_id", user.Role.PublicId.ToString()));
 
         return GenerateToken(claims, _options.AccessTokenExpirationMinutes);
     }
@@ -69,14 +72,12 @@ public class JwtProvider : IJwtProvider
         
         try
         {
-            var rsa = RSA.Create();
-            var pemContent = File.ReadAllText(_options.PublicKeyPath);
-            rsa.ImportFromPem(pemContent);
+            var key = _rsaKeyProvider.GetPublicKey();
 
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new RsaSecurityKey(rsa),
+                IssuerSigningKey = key,
                 ValidateIssuer = true,
                 ValidIssuer = _options.Issuer,
                 ValidateAudience = true,
@@ -100,11 +101,7 @@ public class JwtProvider : IJwtProvider
 
     private string GenerateToken(IEnumerable<Claim> claims, int expirationMinutes)
     {
-        var rsa = RSA.Create();
-        var pemContent = File.ReadAllText(_options.PrivateKeyPath);
-        rsa.ImportFromPem(pemContent);
-
-        var key = new RsaSecurityKey(rsa);
+        var key = _rsaKeyProvider.GetPrivateKey();
         var creds = new SigningCredentials(key, SecurityAlgorithms.RsaSha256);
 
         var token = new JwtSecurityToken(

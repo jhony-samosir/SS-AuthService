@@ -50,6 +50,7 @@ public static class DependencyInjection
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
 
         services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
+        services.AddSingleton<IRsaKeyProvider, RsaKeyProvider>();
         services.AddScoped<IJwtProvider, JwtProvider>();
         services.AddScoped<ITokenHasher, TokenHasher>();
         services.AddScoped<IEmailService, GmailEmailService>();

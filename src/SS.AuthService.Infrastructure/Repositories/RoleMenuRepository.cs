@@ -91,10 +91,17 @@ public class RoleMenuRepository : IRoleMenuRepository
         var permissions = new List<string>();
         foreach (var rm in roleMenus)
         {
-            if (rm.CanRead) permissions.Add($"{rm.Menu.Name}:Read");
-            if (rm.CanCreate) permissions.Add($"{rm.Menu.Name}:Create");
-            if (rm.CanUpdate) permissions.Add($"{rm.Menu.Name}:Update");
-            if (rm.CanDelete) permissions.Add($"{rm.Menu.Name}:Delete");
+            // Standardize: Add base menu name if any permission is granted
+            if (rm.CanRead || rm.CanCreate || rm.CanUpdate || rm.CanDelete)
+            {
+                permissions.Add(rm.Menu.Name);
+            }
+
+            // Standardize: Use SPACE as separator to match frontend ADMIN_PERMISSIONS constants
+            if (rm.CanRead) permissions.Add($"{rm.Menu.Name} Read");
+            if (rm.CanCreate) permissions.Add($"{rm.Menu.Name} Create");
+            if (rm.CanUpdate) permissions.Add($"{rm.Menu.Name} Update");
+            if (rm.CanDelete) permissions.Add($"{rm.Menu.Name} Delete");
         }
 
         // Cache hasil selama 15 menit

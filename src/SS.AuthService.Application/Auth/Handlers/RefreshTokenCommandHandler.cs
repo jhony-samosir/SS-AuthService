@@ -20,7 +20,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, L
         IUnitOfWork unitOfWork,
         IJwtProvider jwtProvider,
         ITokenHasher tokenHasher,
-        IOptions<SecuritySettings> securitySettings)
+        IOptionsSnapshot<SecuritySettings> securitySettings)
     {
         _unitOfWork = unitOfWork;
         _jwtProvider = jwtProvider;
@@ -66,6 +66,11 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, L
         if (user == null || !user.IsActive)
         {
             return new LoginResult(false, "User account is disabled or not found.", StatusCode: 401);
+        }
+
+        if (user.Role == null)
+        {
+            return new LoginResult(false, "Account configuration error. Please contact administrator.", StatusCode: 500);
         }
 
         // 5. Refresh Token Rotation (Transactional)

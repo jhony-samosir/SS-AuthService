@@ -5,4 +5,5 @@ public record LoginResult(
     string Message, 
     string? AccessToken = null, 
     string? RefreshToken = null,
-    int StatusCode = 200);
+    int StatusCode = 200,
+    bool IsMfaRequired = false);

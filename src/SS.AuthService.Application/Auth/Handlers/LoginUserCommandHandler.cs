@@ -1,7 +1,9 @@
 using MediatR;
 using SS.AuthService.Application.Auth.Commands;
 using SS.AuthService.Application.Auth.DTOs;
+using SS.AuthService.Application.Common.Settings;
 using SS.AuthService.Application.Interfaces;
+using Microsoft.Extensions.Options;
 using SS.AuthService.Domain.Entities;
 using System.Net;
 
@@ -13,6 +15,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, LoginRe
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtProvider _jwtProvider;
     private readonly ITokenHasher _tokenHasher;
+    private readonly SecuritySettings _securitySettings;
 
     // Valid Argon2 format hash to prevent timing attacks when email is not found
     private const string DummyHash = "MTIzNDU2Nzg5MDEyMzQ1Ng==.YTM0NWY2NzhhYmNkZWYwMTIzNDU2NzhhYmNkZWYwMTI=";
@@ -21,12 +24,14 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, LoginRe
         IUnitOfWork unitOfWork, 
         IPasswordHasher passwordHasher, 
         IJwtProvider jwtProvider,
-        ITokenHasher tokenHasher)
+        ITokenHasher tokenHasher,
+        IOptionsSnapshot<SecuritySettings> securitySettings)
     {
         _unitOfWork = unitOfWork;
         _passwordHasher = passwordHasher;
         _jwtProvider = jwtProvider;
         _tokenHasher = tokenHasher;
+        _securitySettings = securitySettings.Value;
     }
 
     public async Task<LoginResult> Handle(LoginUserCommand request, CancellationToken cancellationToken)
@@ -41,6 +46,12 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, LoginRe
         if (user != null && user.LockedUntil.HasValue && user.LockedUntil.Value > DateTime.UtcNow)
         {
             return new LoginResult(false, "Account is locked. Please try again later.", StatusCode: 429);
+        }
+
+        // 3. Verifikasi Kelengkapan Data User (Role required for token generation)
+        if (user != null && user.Role == null)
+        {
+            return new LoginResult(false, "Account configuration error. Please contact administrator.", StatusCode: 500);
         }
 
         bool isPasswordValid = false;
@@ -95,7 +106,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, LoginRe
             {
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
-                return new LoginResult(false, invalidCredentialsMessage);
+                return new LoginResult(false, invalidCredentialsMessage, StatusCode: 401);
             }
 
             // 5. Cek Verifikasi Email (Hanya jika password benar)
@@ -112,7 +123,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, LoginRe
                 var mfaToken = _jwtProvider.GenerateMfaChallengeToken(user);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
-                return new LoginResult(true, "MFA required.", AccessToken: mfaToken, StatusCode: 202);
+                return new LoginResult(true, "MFA required.", AccessToken: mfaToken, StatusCode: 202, IsMfaRequired: true);
             }
 
             var accessToken = _jwtProvider.GenerateAccessToken(user);
@@ -125,7 +136,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, LoginRe
                 RefreshTokenHash = _tokenHasher.Hash(refreshToken), // Di-hash menggunakan SHA-256
                 IpAddress = attempt.IpAddress,
                 DeviceInfo = request.DeviceInfo,
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                ExpiresAt = DateTime.UtcNow.AddDays(_securitySettings.RefreshTokenExpiryDays),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };

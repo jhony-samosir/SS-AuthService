@@ -7,6 +7,7 @@ using SS.AuthService.API.DTOs;
 using SS.AuthService.Application.Auth.Commands;
 using SS.AuthService.Application.Common.Settings;
 using System;
+using SS.AuthService.Application.Common.Constants;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -32,10 +33,9 @@ public class MfaController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Setup()
     {
-        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+        var userIdString = User.FindFirstValue(ClaimConstants.UserId) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        if (!int.TryParse(userIdString, out var userId)) return Unauthorized();
 
-        var userId = int.Parse(userIdString);
         var command = new SetupMfaCommand(userId);
         var result = await _mediator.Send(command);
         return Ok(result);
@@ -45,10 +45,9 @@ public class MfaController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Enable([FromBody] MfaRequest request)
     {
-        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+        var userIdString = User.FindFirstValue(ClaimConstants.UserId) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        if (!int.TryParse(userIdString, out var userId)) return Unauthorized();
 
-        var userId = int.Parse(userIdString);
         var command = new EnableMfaCommand(userId, request.Code);
         var result = await _mediator.Send(command);
 
