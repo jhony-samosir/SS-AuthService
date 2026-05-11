@@ -143,6 +143,8 @@ app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseForwardedHeaders();
 
+app.UseMiddleware<GatewayOnlyMiddleware>();
+
 // NOTE: UsePathBase is removed to avoid conflict with [Route("api/[controller]")] 
 // which already handles the /api/auth prefix. This ensures /api/auth/login maps 
 // correctly to AuthController.Login.

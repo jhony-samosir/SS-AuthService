@@ -35,7 +35,7 @@ public static class RateLimitExtensions
                 return RateLimitPartition.GetSlidingWindowLimiter(ipAddress, _ => new SlidingWindowRateLimiterOptions
                 {
                     AutoReplenishment = true,
-                    PermitLimit = 5,
+                    PermitLimit = 10,
                     QueueLimit = 0,
                     SegmentsPerWindow = 3,
                     Window = TimeSpan.FromMinutes(1)

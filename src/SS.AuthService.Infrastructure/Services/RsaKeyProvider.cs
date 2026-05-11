@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.IO;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SS.AuthService.Application.Interfaces;
@@ -14,6 +15,17 @@ public class RsaKeyProvider : IRsaKeyProvider
     public RsaKeyProvider(IOptions<JwtOptions> options)
     {
         var settings = options.Value;
+
+        // Fail-fast: Validate key existence at startup
+        if (!File.Exists(settings.PublicKeyPath))
+        {
+            throw new FileNotFoundException($"JWT public key not found at: {settings.PublicKeyPath}");
+        }
+
+        if (!File.Exists(settings.PrivateKeyPath))
+        {
+            throw new FileNotFoundException($"JWT private key not found at: {settings.PrivateKeyPath}");
+        }
 
         _publicKey = new Lazy<RsaSecurityKey>(() =>
         {

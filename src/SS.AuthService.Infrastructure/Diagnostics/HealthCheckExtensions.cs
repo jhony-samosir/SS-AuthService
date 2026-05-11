@@ -27,7 +27,21 @@ public static class HealthCheckExtensions
             .AddWorkingSetHealthCheck(1024 * 1024 * 1024, name: "Memory")
             .AddDiskStorageHealthCheck(setup => 
                 setup.AddDrive(diskPath, 1024 * 1024 * 1024), // Min 1GB
-                name: "Disk");
+                name: "Disk")
+            .AddCheck("JWT-Keys", () => {
+                var pubKeyPath = configuration["Jwt:PublicKeyPath"];
+                var privKeyPath = configuration["Jwt:PrivateKeyPath"];
+                
+                if (string.IsNullOrEmpty(pubKeyPath) || string.IsNullOrEmpty(privKeyPath))
+                    return HealthCheckResult.Unhealthy("JWT key paths are not configured.");
+                
+                var pubExists = System.IO.File.Exists(pubKeyPath);
+                var privExists = System.IO.File.Exists(privKeyPath);
+                
+                if (pubExists && privExists) return HealthCheckResult.Healthy("JWT keys are present.");
+                
+                return HealthCheckResult.Unhealthy($"Missing JWT keys: {(pubExists ? "" : "Public Key ")}{(privExists ? "" : "Private Key")}".Trim());
+            }, tags: new[] { "security", "jwt" });
 
         return services;
     }

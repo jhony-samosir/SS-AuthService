@@ -18,11 +18,16 @@ public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly SS.AuthService.Application.Common.Settings.SecuritySettings _securitySettings;
+    private readonly JwtOptions _jwtOptions;
 
-    public AuthController(IMediator mediator, Microsoft.Extensions.Options.IOptions<SS.AuthService.Application.Common.Settings.SecuritySettings> securitySettings)
+    public AuthController(
+        IMediator mediator, 
+        Microsoft.Extensions.Options.IOptions<SS.AuthService.Application.Common.Settings.SecuritySettings> securitySettings,
+        Microsoft.Extensions.Options.IOptions<JwtOptions> jwtOptions)
     {
         _mediator = mediator;
         _securitySettings = securitySettings.Value;
+        _jwtOptions = jwtOptions.Value;
     }
 
     [HttpPost("register")]
@@ -59,15 +64,7 @@ public class AuthController : ControllerBase
             });
         }
 
-        // Set Refresh Token in HttpOnly Cookie for security
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true, // Always use HTTPS in production
-            SameSite = SameSiteMode.Strict,
-            Expires = DateTime.UtcNow.AddDays(_securitySettings.RefreshTokenExpiryDays)
-        };
-        Response.Cookies.Append("refreshToken", result.RefreshToken!, cookieOptions);
+        SetTokenCookies(result.AccessToken!, result.RefreshToken!);
 
         return Ok(new { accessToken = result.AccessToken });
     }
@@ -143,15 +140,7 @@ public class AuthController : ControllerBase
             return StatusCode(result.StatusCode, new { message = result.Message });
         }
 
-        // Rotate Refresh Token in HttpOnly Cookie
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
-            Expires = DateTime.UtcNow.AddDays(_securitySettings.RefreshTokenExpiryDays)
-        };
-        Response.Cookies.Append("refreshToken", result.RefreshToken!, cookieOptions);
+        SetTokenCookies(result.AccessToken!, result.RefreshToken!);
 
         return Ok(new { accessToken = result.AccessToken });
     }
@@ -169,13 +158,44 @@ public class AuthController : ControllerBase
         }
 
         // Clear the refresh token cookie
-        Response.Cookies.Delete("refreshToken", new CookieOptions
+        var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Strict
-        });
+        };
+
+        Response.Cookies.Delete("refreshToken", cookieOptions);
+        Response.Cookies.Delete("accessToken", cookieOptions);
 
         return Ok(new { message = "Logged out successfully." });
+    }
+
+    private void SetTokenCookies(string accessToken, string refreshToken)
+    {
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict
+        };
+
+        // Access Token Cookie (Short-lived for Gateway/Session recovery)
+        Response.Cookies.Append("accessToken", accessToken, new CookieOptions
+        {
+            HttpOnly = cookieOptions.HttpOnly,
+            Secure = cookieOptions.Secure,
+            SameSite = cookieOptions.SameSite,
+            Expires = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes)
+        });
+
+        // Refresh Token Cookie (Long-lived for Persistence)
+        Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+        {
+            HttpOnly = cookieOptions.HttpOnly,
+            Secure = cookieOptions.Secure,
+            SameSite = cookieOptions.SameSite,
+            Expires = DateTime.UtcNow.AddDays(_securitySettings.RefreshTokenExpiryDays)
+        });
     }
 }

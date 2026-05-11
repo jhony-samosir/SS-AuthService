@@ -54,6 +54,7 @@ logs/
 .env
 .env.*
 appsettings.Development.json
+appsettings.Production.json
 
 # =========================
 
