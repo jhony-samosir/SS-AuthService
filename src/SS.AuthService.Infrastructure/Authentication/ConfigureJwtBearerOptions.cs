@@ -36,6 +36,8 @@ public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions
             ValidAlgorithms = new[] { SecurityAlgorithms.RsaSha256 },
             ClockSkew = TimeSpan.FromSeconds(30) // Allow small clock drift between services
         };
+        
+        options.MapInboundClaims = false;
     }
 
     public void Configure(JwtBearerOptions options)
