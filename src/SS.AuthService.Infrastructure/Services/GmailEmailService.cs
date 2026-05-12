@@ -35,7 +35,7 @@ public class GmailEmailService : IEmailService
             htmlBody = "<h2>Verify Email</h2><a href='{VerificationUrl}'>Verify</a>";
         }
 
-        var verificationUrl = $"{_options.BaseUrl}/api/auth/verify-email?token={token}";
+        var verificationUrl = $"{_options.BaseUrl}/verify-email?token={token}";
         htmlBody = htmlBody.Replace("{VerificationUrl}", verificationUrl);
 
         var message = new MimeMessage();
