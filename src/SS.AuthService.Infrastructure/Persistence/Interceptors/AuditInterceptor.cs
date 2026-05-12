@@ -33,7 +33,7 @@ public class AuditInterceptor : SaveChangesInterceptor
     {
         if (context == null) return;
 
-        var userId = _currentUserService.UserId;
+        var userDisplayName = _currentUserService.UserDisplayName;
         var now = DateTime.UtcNow;
 
         // 1. Audit Trail Logic (IAuditableEntity)
@@ -42,14 +42,14 @@ public class AuditInterceptor : SaveChangesInterceptor
             if (entry.State == EntityState.Added)
             {
                 entry.Entity.CreatedAt = now;
-                entry.Entity.CreatedBy = userId;
+                entry.Entity.CreatedBy = userDisplayName;
                 entry.Entity.UpdatedAt = now;
-                entry.Entity.UpdatedBy = userId;
+                entry.Entity.UpdatedBy = userDisplayName;
             }
             else if (entry.State == EntityState.Modified || entry.HasChangedOwnedEntities())
             {
                 entry.Entity.UpdatedAt = now;
-                entry.Entity.UpdatedBy = userId;
+                entry.Entity.UpdatedBy = userDisplayName;
             }
         }
 
@@ -62,7 +62,7 @@ public class AuditInterceptor : SaveChangesInterceptor
                 entry.State = EntityState.Unchanged;
 
                 entry.Entity.DeletedAt = now;
-                entry.Entity.DeletedBy = userId;
+                entry.Entity.DeletedBy = userDisplayName;
 
                 // Tandai hanya kolom audit yang berubah (Efficient SQL)
                 entry.Property(nameof(ISoftDelete.DeletedAt)).IsModified = true;
@@ -72,7 +72,7 @@ public class AuditInterceptor : SaveChangesInterceptor
                 if (entry.Entity is IAuditableEntity auditable)
                 {
                     auditable.UpdatedAt = now;
-                    auditable.UpdatedBy = userId;
+                    auditable.UpdatedBy = userDisplayName;
                     entry.Property(nameof(IAuditableEntity.UpdatedAt)).IsModified = true;
                     entry.Property(nameof(IAuditableEntity.UpdatedBy)).IsModified = true;
                 }

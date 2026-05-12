@@ -30,4 +30,13 @@ public class CurrentUserService : ICurrentUserService
             return null;
         }
     }
+
+    public string? UserDisplayName
+    {
+        get
+        {
+            return _httpContextAccessor.HttpContext?.User?.FindFirstValue("full_name")
+                ?? _httpContextAccessor.HttpContext?.User?.FindFirstValue(JwtRegisteredClaimNames.Email);
+        }
+    }
 }

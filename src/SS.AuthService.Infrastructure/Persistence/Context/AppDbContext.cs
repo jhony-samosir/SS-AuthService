@@ -39,6 +39,17 @@ public partial class AppDbContext : DbContext, IDataProtectionKeyContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<DataProtectionKey>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("data_protection_keys_pkey");
+
+            entity.ToTable("data_protection_keys");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.FriendlyName).HasColumnName("friendly_name");
+            entity.Property(e => e.Xml).HasColumnName("xml");
+        });
+
         modelBuilder.Entity<AuthSession>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("auth_sessions_pkey");

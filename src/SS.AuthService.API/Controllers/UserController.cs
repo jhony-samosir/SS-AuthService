@@ -38,6 +38,34 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
+    /// Memperbarui profil user yang sedang login.
+    /// </summary>
+    [HttpPatch("me")]
+    public async Task<IActionResult> UpdateMe([FromBody] UpdateProfileCommand command)
+    {
+        var result = await _mediator.Send(command);
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new { message = result.ErrorMessage, code = result.ErrorCode });
+        }
+        return Ok(new { message = "Profile updated successfully." });
+    }
+
+    /// <summary>
+    /// Mengganti password user yang sedang login.
+    /// </summary>
+    [HttpPost("me/change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command)
+    {
+        var result = await _mediator.Send(command);
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new { message = result.ErrorMessage, code = result.ErrorCode });
+        }
+        return Ok(new { message = "Password changed successfully. Please log in again on all devices." });
+    }
+
+    /// <summary>
     /// Mengambil daftar user dengan filter, sort, dan pagination.
     /// </summary>
     [HttpGet]

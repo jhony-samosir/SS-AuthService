@@ -22,15 +22,15 @@ public partial class Menu : IAuditableEntity, ISoftDelete
 
     public DateTime CreatedAt { get; set; }
 
-    public int? CreatedBy { get; set; }
+    public string? CreatedBy { get; set; }
 
     public DateTime UpdatedAt { get; set; }
 
-    public int? UpdatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 
     public DateTime? DeletedAt { get; set; }
 
-    public int? DeletedBy { get; set; }
+    public string? DeletedBy { get; set; }
     
     public virtual Menu? Parent { get; set; }
     public virtual ICollection<Menu> Children { get; set; } = new List<Menu>();
