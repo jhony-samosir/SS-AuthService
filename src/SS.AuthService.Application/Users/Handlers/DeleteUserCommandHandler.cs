@@ -43,10 +43,8 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
         {
-            // 3. Soft Delete
-            user.DeletedAt = System.DateTime.UtcNow;
-            user.DeletedBy = _currentUserService.UserId;
-            _unitOfWork.Users.Update(user);
+            // 3. Soft Delete (Intercepted by AuditInterceptor)
+            _unitOfWork.Users.Delete(user);
 
             // 4. Revoke all active sessions (ExecuteUpdateAsync - immediate execution)
             await _unitOfWork.AuthSessions.RevokeAllForUserAsync(user.Id, cancellationToken);

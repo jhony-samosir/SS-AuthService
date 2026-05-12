@@ -20,7 +20,7 @@ public record UserProfileDto(
     DateTime? TosAcceptedAt,
     DateTime? PrivacyPolicyAcceptedAt,
     DateTime CreatedAt,
-    int? CreatedBy,
+    string? CreatedBy,
     DateTime UpdatedAt,
-    int? UpdatedBy
+    string? UpdatedBy
 );

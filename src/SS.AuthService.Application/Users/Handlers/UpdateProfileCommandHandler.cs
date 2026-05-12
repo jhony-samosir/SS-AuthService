@@ -35,8 +35,6 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
         }
 
         user.FullName = request.FullName;
-        user.UpdatedAt = DateTime.UtcNow;
-        user.UpdatedBy = userId;
 
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

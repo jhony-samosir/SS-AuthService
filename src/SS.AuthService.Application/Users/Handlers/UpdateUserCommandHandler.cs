@@ -56,8 +56,6 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
         user.FullName = request.FullName;
         user.RoleId = request.RoleId;
         user.IsActive = request.IsActive;
-        user.UpdatedAt = System.DateTime.UtcNow;
-        user.UpdatedBy = actorId;
 
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

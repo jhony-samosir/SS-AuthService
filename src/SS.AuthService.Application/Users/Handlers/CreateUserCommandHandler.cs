@@ -75,10 +75,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
                 FullName = request.FullName,
                 RoleId = request.RoleId,
                 IsActive = request.IsActive,
-                EmailVerifiedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                CreatedBy = creatorId
+                EmailVerifiedAt = DateTime.UtcNow
             };
 
             await _unitOfWork.Users.AddAsync(user, cancellationToken);

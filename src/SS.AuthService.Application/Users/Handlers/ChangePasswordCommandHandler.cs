@@ -48,8 +48,6 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 
         // 2. Hash and update new password
         user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
-        user.UpdatedAt = DateTime.UtcNow;
-        user.UpdatedBy = userId;
 
         _unitOfWork.Users.Update(user);
 
