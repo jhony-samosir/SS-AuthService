@@ -98,9 +98,9 @@ public class RolesController : ControllerBase
 
     [HttpPut("{publicId:guid}/permissions")]
     [AuthorizePermission("RoleManagement", "Update")]
-    public async Task<IActionResult> SyncPermissions(Guid publicId, [FromBody] List<SyncRolePermissionInput> permissions)
+    public async Task<IActionResult> SyncPermissions(Guid publicId, [FromBody] SyncRolePermissionsRequest request)
     {
-        var result = await _mediator.Send(new SyncRolePermissionsCommand(publicId, permissions));
+        var result = await _mediator.Send(new SyncRolePermissionsCommand(publicId, request.Permissions));
         if (!result.IsSuccess)
         {
             if (result.ErrorCode == "RoleNotFound") return NotFound();

@@ -13,7 +13,7 @@ public record RolePermissionDto(
 );
 
 public record SyncRolePermissionInput(
-    Guid MenuPublicId,
+    Guid MenuId,
     bool CanCreate,
     bool CanRead,
     bool CanUpdate,

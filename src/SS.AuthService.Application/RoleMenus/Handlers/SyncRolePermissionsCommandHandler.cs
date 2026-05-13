@@ -36,7 +36,7 @@ public class SyncRolePermissionsCommandHandler : IRequestHandler<SyncRolePermiss
         if (role == null) return Result<bool>.Failure("RoleNotFound", "Role not found.");
 
         // 1. Fetch all menus in a single batch
-        var menuPublicIds = request.Permissions.Select(p => p.MenuPublicId).Distinct().ToList();
+        var menuPublicIds = request.Permissions.Select(p => p.MenuId).Distinct().ToList();
         var menus = await _menuRepository.GetByPublicIdsAsync(menuPublicIds, cancellationToken);
         var menuMap = menus.ToDictionary(m => m.PublicId);
 
@@ -60,7 +60,7 @@ public class SyncRolePermissionsCommandHandler : IRequestHandler<SyncRolePermiss
         // 5. Add new mappings with invariants
         foreach (var input in request.Permissions)
         {
-            var menu = menuMap[input.MenuPublicId];
+            var menu = menuMap[input.MenuId];
 
             // Invariant: If any action is allowed, CanRead must be true
             bool canRead = input.CanRead || input.CanCreate || input.CanUpdate || input.CanDelete;
