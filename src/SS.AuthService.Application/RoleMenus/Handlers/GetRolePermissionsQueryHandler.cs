@@ -5,7 +5,7 @@ using SS.AuthService.Application.RoleMenus.Queries;
 
 namespace SS.AuthService.Application.RoleMenus.Handlers;
 
-public class GetRolePermissionsQueryHandler : IRequestHandler<GetRolePermissionsQuery, List<RolePermissionDto>>
+public class GetRolePermissionsQueryHandler : IRequestHandler<GetRolePermissionsQuery, List<RolePermissionDto>?>
 {
     private readonly IRoleRepository _roleRepository;
     private readonly IRoleMenuRepository _roleMenuRepository;

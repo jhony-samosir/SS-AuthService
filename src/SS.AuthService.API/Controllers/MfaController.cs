@@ -11,6 +11,9 @@ using SS.AuthService.Application.Common.Constants;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using SS.AuthService.Infrastructure.Authentication;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 
 namespace SS.AuthService.API.Controllers;
 
@@ -20,13 +23,19 @@ public class MfaController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly SecuritySettings _securitySettings;
+    private readonly JwtOptions _jwtOptions;
+    private readonly IWebHostEnvironment _env;
 
     public MfaController(
         IMediator mediator,
-        IOptions<SecuritySettings> securitySettings)
+        IOptions<SecuritySettings> securitySettings,
+        IOptions<JwtOptions> jwtOptions,
+        IWebHostEnvironment env)
     {
         _mediator = mediator;
         _securitySettings = securitySettings.Value;
+        _jwtOptions = jwtOptions.Value;
+        _env = env;
     }
 
     [HttpPost("setup")]
@@ -75,16 +84,43 @@ public class MfaController : ControllerBase
             return StatusCode(result.StatusCode, new { message = result.Message });
         }
 
-        // Set Refresh Token in HttpOnly Cookie (similar to Login)
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
-            Expires = DateTime.UtcNow.AddDays(_securitySettings.RefreshTokenExpiryDays)
-        };
-        Response.Cookies.Append("refreshToken", result.RefreshToken!, cookieOptions);
+        SetTokenCookies(result.AccessToken!, result.RefreshToken!);
 
         return Ok(new { accessToken = result.AccessToken });
+    }
+
+    private void SetTokenCookies(string accessToken, string refreshToken)
+    {
+        var cookieOptions = GetCookieOptions();
+
+        // Access Token Cookie (Short-lived for Gateway/Session recovery)
+        Response.Cookies.Append("accessToken", accessToken, new CookieOptions
+        {
+            HttpOnly = cookieOptions.HttpOnly,
+            Secure = cookieOptions.Secure,
+            SameSite = cookieOptions.SameSite,
+            Expires = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes)
+        });
+
+        // Refresh Token Cookie (Long-lived for Persistence)
+        Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+        {
+            HttpOnly = cookieOptions.HttpOnly,
+            Secure = cookieOptions.Secure,
+            SameSite = cookieOptions.SameSite,
+            Expires = DateTime.UtcNow.AddDays(_securitySettings.RefreshTokenExpiryDays)
+        });
+    }
+
+    private CookieOptions GetCookieOptions()
+    {
+        return new CookieOptions
+        {
+            HttpOnly = true,
+            // Only use Secure cookies in Production
+            Secure = _env.IsProduction(),
+            // SameSite=Strict can be problematic in Dev on HTTP
+            SameSite = _env.IsProduction() ? SameSiteMode.Strict : SameSiteMode.Lax
+        };
     }
 }

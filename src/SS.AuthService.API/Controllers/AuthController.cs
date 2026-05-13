@@ -9,6 +9,8 @@ using SS.AuthService.Application.Auth.DTOs;
 using SS.AuthService.Application.Users.Queries;
 using SS.AuthService.Domain.Constants;
 using SS.AuthService.Infrastructure.Authentication;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 
 namespace SS.AuthService.API.Controllers;
 
@@ -19,15 +21,18 @@ public class AuthController : ControllerBase
     private readonly IMediator _mediator;
     private readonly SS.AuthService.Application.Common.Settings.SecuritySettings _securitySettings;
     private readonly JwtOptions _jwtOptions;
+    private readonly IWebHostEnvironment _env;
 
     public AuthController(
         IMediator mediator, 
         Microsoft.Extensions.Options.IOptions<SS.AuthService.Application.Common.Settings.SecuritySettings> securitySettings,
-        Microsoft.Extensions.Options.IOptions<JwtOptions> jwtOptions)
+        Microsoft.Extensions.Options.IOptions<JwtOptions> jwtOptions,
+        IWebHostEnvironment env)
     {
         _mediator = mediator;
         _securitySettings = securitySettings.Value;
         _jwtOptions = jwtOptions.Value;
+        _env = env;
     }
 
     [HttpPost("register")]
@@ -157,13 +162,8 @@ public class AuthController : ControllerBase
             await _mediator.Send(command);
         }
 
-        // Clear the refresh token cookie
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict
-        };
+        // Clear cookies
+        var cookieOptions = GetCookieOptions();
 
         Response.Cookies.Delete("refreshToken", cookieOptions);
         Response.Cookies.Delete("accessToken", cookieOptions);
@@ -173,12 +173,7 @@ public class AuthController : ControllerBase
 
     private void SetTokenCookies(string accessToken, string refreshToken)
     {
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict
-        };
+        var cookieOptions = GetCookieOptions();
 
         // Access Token Cookie (Short-lived for Gateway/Session recovery)
         Response.Cookies.Append("accessToken", accessToken, new CookieOptions
@@ -197,5 +192,17 @@ public class AuthController : ControllerBase
             SameSite = cookieOptions.SameSite,
             Expires = DateTime.UtcNow.AddDays(_securitySettings.RefreshTokenExpiryDays)
         });
+    }
+
+    private CookieOptions GetCookieOptions()
+    {
+        return new CookieOptions
+        {
+            HttpOnly = true,
+            // Only use Secure cookies in Production
+            Secure = _env.IsProduction(),
+            // SameSite=Strict can be problematic in Dev on HTTP
+            SameSite = _env.IsProduction() ? SameSiteMode.Strict : SameSiteMode.Lax
+        };
     }
 }
