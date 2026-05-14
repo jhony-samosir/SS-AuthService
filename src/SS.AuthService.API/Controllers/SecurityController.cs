@@ -20,7 +20,7 @@ public class SecurityController : ControllerBase
     /// Mengambil daftar percobaan login untuk audit keamanan.
     /// </summary>
     [HttpGet("login-attempts")]
-    [AuthorizePermission("SecurityAudit", "Read")]
+    [AuthorizePermission("Login Attempts", "Read")]
     public async Task<IActionResult> GetLoginAttempts(
         [FromQuery] string? email,
         [FromQuery] Guid? userPublicId,
@@ -40,7 +40,7 @@ public class SecurityController : ControllerBase
     /// Mengambil detail percobaan login spesifik.
     /// </summary>
     [HttpGet("login-attempts/{id:long}")]
-    [AuthorizePermission("SecurityAudit", "Read")]
+    [AuthorizePermission("Login Attempts", "Read")]
     public async Task<IActionResult> GetLoginAttempt(long id)
     {
         var result = await _mediator.Send(new GetLoginAttemptByIdQuery(id));

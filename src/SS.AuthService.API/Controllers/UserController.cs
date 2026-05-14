@@ -267,7 +267,7 @@ public class UserController : ControllerBase
     /// Mencabut semua sesi user.
     /// </summary>
     [HttpDelete("{publicId:guid}/sessions")]
-    [AuthorizePermission("UserManagement", "Update")]
+    [AuthorizePermission("Users", "Update")]
     public async Task<IActionResult> RevokeAllSessions(Guid publicId)
     {
         var result = await _mediator.Send(new RevokeAllUserSessionsCommand(publicId));
@@ -284,7 +284,7 @@ public class UserController : ControllerBase
     /// Mencabut satu sesi spesifik user.
     /// </summary>
     [HttpDelete("{publicId:guid}/sessions/{sessionPublicId:guid}")]
-    [AuthorizePermission("UserManagement", "Update")]
+    [AuthorizePermission("Users", "Update")]
     public async Task<IActionResult> RevokeSession(Guid publicId, Guid sessionPublicId)
     {
         var result = await _mediator.Send(new RevokeUserSessionCommand(publicId, sessionPublicId));
@@ -301,7 +301,7 @@ public class UserController : ControllerBase
     /// Mengirim ulang email verifikasi ke user.
     /// </summary>
     [HttpPost("{publicId:guid}/resend-verification")]
-    [AuthorizePermission("UserManagement", "Update")]
+    [AuthorizePermission("Users", "Update")]
     [EnableRateLimiting("AuthLimiter")]
     public async Task<IActionResult> ResendVerification(Guid publicId)
     {
@@ -322,7 +322,7 @@ public class UserController : ControllerBase
     /// Menonaktifkan MFA untuk user (Audit/Recovery).
     /// </summary>
     [HttpPut("{publicId:guid}/mfa/disable")]
-    [AuthorizePermission("UserManagement", "Update")]
+    [AuthorizePermission("Users", "Update")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -342,7 +342,7 @@ public class UserController : ControllerBase
     /// Membuat ulang kode pemulihan MFA untuk user. Kode baru akan dikirimkan langsung ke email user demi keamanan.
     /// </summary>
     [HttpPost("{publicId:guid}/mfa/recovery-codes/regenerate")]
-    [AuthorizePermission("UserManagement", "Update")]
+    [AuthorizePermission("Users", "Update")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -362,7 +362,7 @@ public class UserController : ControllerBase
     /// Mengambil info status MFA user.
     /// </summary>
     [HttpGet("{publicId:guid}/mfa")]
-    [AuthorizePermission("UserManagement", "Read")]
+    [AuthorizePermission("Users", "Read")]
     public async Task<IActionResult> GetMfaInfo(Guid publicId)
     {
         var result = await _mediator.Send(new GetUserMfaInfoQuery(publicId));

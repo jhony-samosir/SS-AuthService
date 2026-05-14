@@ -20,7 +20,7 @@ public class MenusController : ControllerBase
     }
 
     [HttpGet]
-    [AuthorizePermission("MenuManagement", "Read")]
+    [AuthorizePermission("Menus", "Read")]
     public async Task<IActionResult> GetFlat()
     {
         var result = await _mediator.Send(new GetMenusQuery());
@@ -36,7 +36,7 @@ public class MenusController : ControllerBase
     }
 
     [HttpGet("{publicId:guid}")]
-    [AuthorizePermission("MenuManagement", "Read")]
+    [AuthorizePermission("Menus", "Read")]
     public async Task<IActionResult> GetById(Guid publicId)
     {
         var result = await _mediator.Send(new GetMenuByIdQuery(publicId));
@@ -45,7 +45,7 @@ public class MenusController : ControllerBase
     }
 
     [HttpPost]
-    [AuthorizePermission("MenuManagement", "Create")]
+    [AuthorizePermission("Menus", "Create")]
     public async Task<IActionResult> Create([FromBody] CreateMenuCommand command)
     {
         var result = await _mediator.Send(command);
@@ -53,7 +53,7 @@ public class MenusController : ControllerBase
     }
 
     [HttpPut("{publicId:guid}")]
-    [AuthorizePermission("MenuManagement", "Update")]
+    [AuthorizePermission("Menus", "Update")]
     public async Task<IActionResult> Update(Guid publicId, [FromBody] UpdateMenuCommand command)
     {
         if (publicId != command.PublicId) return BadRequest("PublicId mismatch.");
@@ -70,7 +70,7 @@ public class MenusController : ControllerBase
     }
 
     [HttpDelete("{publicId:guid}")]
-    [AuthorizePermission("MenuManagement", "Delete")]
+    [AuthorizePermission("Menus", "Delete")]
     public async Task<IActionResult> Delete(Guid publicId)
     {
         var result = await _mediator.Send(new DeleteMenuCommand(publicId));
