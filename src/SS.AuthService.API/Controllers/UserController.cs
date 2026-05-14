@@ -69,7 +69,7 @@ public class UserController : ControllerBase
     /// Mengambil daftar user dengan filter, sort, dan pagination.
     /// </summary>
     [HttpGet]
-    [AuthorizePermission("UserManagement", "Read")]
+    [AuthorizePermission("Users", "Read")]
     public async Task<IActionResult> GetList([FromQuery] GetUsersQuery query)
     {
         var result = await _mediator.Send(query);
@@ -80,7 +80,7 @@ public class UserController : ControllerBase
     /// Mengambil detail user berdasarkan PublicId.
     /// </summary>
     [HttpGet("{publicId:guid}")]
-    [AuthorizePermission("UserManagement", "Read")]
+    [AuthorizePermission("Users", "Read")]
     public async Task<IActionResult> GetDetail(Guid publicId)
     {
         var result = await _mediator.Send(new GetUserDetailQuery(publicId));
@@ -95,7 +95,7 @@ public class UserController : ControllerBase
     /// Membuat user baru oleh Admin.
     /// </summary>
     [HttpPost]
-    [AuthorizePermission("UserManagement", "Create")]
+    [AuthorizePermission("Users", "Create")]
     public async Task<IActionResult> Create([FromBody] CreateUserCommand command)
     {
         var result = await _mediator.Send(command);
@@ -114,7 +114,7 @@ public class UserController : ControllerBase
     /// Memperbarui data user.
     /// </summary>
     [HttpPut("{publicId:guid}")]
-    [AuthorizePermission("UserManagement", "Update")]
+    [AuthorizePermission("Users", "Update")]
     public async Task<IActionResult> Update(Guid publicId, [FromBody] UpdateUserCommand command)
     {
         if (publicId != command.PublicId)
@@ -135,7 +135,7 @@ public class UserController : ControllerBase
     /// Menghapus user (soft-delete).
     /// </summary>
     [HttpDelete("{publicId:guid}")]
-    [AuthorizePermission("UserManagement", "Delete")]
+    [AuthorizePermission("Users", "Delete")]
     public async Task<IActionResult> Delete(Guid publicId)
     {
         var result = await _mediator.Send(new DeleteUserCommand(publicId));
@@ -151,7 +151,7 @@ public class UserController : ControllerBase
     /// Membuka blokir user (unlock).
     /// </summary>
     [HttpPut("{publicId:guid}/unlock")]
-    [AuthorizePermission("UserManagement", "Update")]
+    [AuthorizePermission("Users", "Update")]
     public async Task<IActionResult> Unlock(Guid publicId)
     {
         var result = await _mediator.Send(new UnlockUserCommand(publicId));
@@ -167,7 +167,7 @@ public class UserController : ControllerBase
     /// Memaksa reset password user (kirim email).
     /// </summary>
     [HttpPut("{publicId:guid}/force-reset-password")]
-    [AuthorizePermission("UserManagement", "Update")]
+    [AuthorizePermission("Users", "Update")]
     public async Task<IActionResult> ForceResetPassword(Guid publicId)
     {
         var result = await _mediator.Send(new ForcePasswordResetCommand(publicId));
@@ -183,7 +183,7 @@ public class UserController : ControllerBase
     /// Mengaktifkan user.
     /// </summary>
     [HttpPut("{publicId:guid}/activate")]
-    [AuthorizePermission("UserManagement", "Update")]
+    [AuthorizePermission("Users", "Update")]
     public async Task<IActionResult> Activate(Guid publicId)
     {
         var result = await _mediator.Send(new ActivateUserCommand(publicId));
@@ -200,7 +200,7 @@ public class UserController : ControllerBase
     /// Menonaktifkan user (deactivate).
     /// </summary>
     [HttpPut("{publicId:guid}/deactivate")]
-    [AuthorizePermission("UserManagement", "Update")]
+    [AuthorizePermission("Users", "Update")]
     public async Task<IActionResult> Deactivate(Guid publicId)
     {
         var result = await _mediator.Send(new DeactivateUserCommand(publicId));
@@ -217,7 +217,7 @@ public class UserController : ControllerBase
     /// Mengunci user (lock).
     /// </summary>
     [HttpPut("{publicId:guid}/lock")]
-    [AuthorizePermission("UserManagement", "Update")]
+    [AuthorizePermission("Users", "Update")]
     public async Task<IActionResult> Lock(Guid publicId, [FromBody] LockUserRequest request)
     {
         var result = await _mediator.Send(new LockUserCommand(publicId, request.LockedUntil, request.LockDurationMinutes));
@@ -234,7 +234,7 @@ public class UserController : ControllerBase
     /// Mengubah role user.
     /// </summary>
     [HttpPut("{publicId:guid}/role")]
-    [AuthorizePermission("UserManagement", "Update")]
+    [AuthorizePermission("Users", "Update")]
     public async Task<IActionResult> AssignRole(Guid publicId, [FromBody] AssignRoleRequest request)
     {
         var result = await _mediator.Send(new AssignUserRoleCommand(publicId, request.RolePublicId));
@@ -251,7 +251,7 @@ public class UserController : ControllerBase
     /// Mengambil daftar sesi aktif user.
     /// </summary>
     [HttpGet("{publicId:guid}/sessions")]
-    [AuthorizePermission("UserManagement", "Read")]
+    [AuthorizePermission("Users", "Read")]
     public async Task<IActionResult> GetSessions(Guid publicId)
     {
         var result = await _mediator.Send(new GetUserSessionsQuery(publicId));

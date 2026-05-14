@@ -35,7 +35,7 @@ public class RoleMenuRepository : IRoleMenuRepository
         var query = from rm in _context.RoleMenus
                     join m in _context.Menus on rm.MenuId equals m.Id
                     where rm.RoleId == roleId 
-                          && m.Path == menuPath 
+                          && m.Name == menuPath 
                           && m.DeletedAt == null 
                           && rm.DeletedAt == null
                     select rm;

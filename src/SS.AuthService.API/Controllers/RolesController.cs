@@ -23,7 +23,7 @@ public class RolesController : ControllerBase
     }
 
     [HttpGet]
-    [AuthorizePermission("RoleManagement", "Read")]
+    [AuthorizePermission("Roles", "Read")]
     public async Task<IActionResult> GetList([FromQuery] GetRolesQuery query)
     {
         var result = await _mediator.Send(query);
@@ -31,7 +31,7 @@ public class RolesController : ControllerBase
     }
 
     [HttpGet("{publicId:guid}")]
-    [AuthorizePermission("RoleManagement", "Read")]
+    [AuthorizePermission("Roles", "Read")]
     public async Task<IActionResult> GetById(Guid publicId)
     {
         var result = await _mediator.Send(new GetRoleByIdQuery(publicId));
@@ -40,7 +40,7 @@ public class RolesController : ControllerBase
     }
 
     [HttpPost]
-    [AuthorizePermission("RoleManagement", "Create")]
+    [AuthorizePermission("Roles", "Create")]
     public async Task<IActionResult> Create([FromBody] CreateRoleCommand command)
     {
         var result = await _mediator.Send(command);
@@ -56,7 +56,7 @@ public class RolesController : ControllerBase
     }
 
     [HttpPut("{publicId:guid}")]
-    [AuthorizePermission("RoleManagement", "Update")]
+    [AuthorizePermission("Roles", "Update")]
     public async Task<IActionResult> Update(Guid publicId, [FromBody] UpdateRoleCommand command)
     {
         if (publicId != command.PublicId) return BadRequest("PublicId mismatch.");
@@ -74,7 +74,7 @@ public class RolesController : ControllerBase
     }
 
     [HttpDelete("{publicId:guid}")]
-    [AuthorizePermission("RoleManagement", "Delete")]
+    [AuthorizePermission("Roles", "Delete")]
     public async Task<IActionResult> Delete(Guid publicId)
     {
         var result = await _mediator.Send(new DeleteRoleCommand(publicId));
@@ -88,7 +88,7 @@ public class RolesController : ControllerBase
     }
 
     [HttpGet("{publicId:guid}/permissions")]
-    [AuthorizePermission("RoleManagement", "Read")]
+    [AuthorizePermission("Roles", "Read")]
     public async Task<IActionResult> GetPermissions(Guid publicId)
     {
         var result = await _mediator.Send(new GetRolePermissionsQuery(publicId));
@@ -97,7 +97,7 @@ public class RolesController : ControllerBase
     }
 
     [HttpPut("{publicId:guid}/permissions")]
-    [AuthorizePermission("RoleManagement", "Update")]
+    [AuthorizePermission("Roles", "Update")]
     public async Task<IActionResult> SyncPermissions(Guid publicId, [FromBody] SyncRolePermissionsRequest request)
     {
         var result = await _mediator.Send(new SyncRolePermissionsCommand(publicId, request.Permissions));

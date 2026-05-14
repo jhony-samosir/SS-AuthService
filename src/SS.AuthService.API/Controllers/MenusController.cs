@@ -28,7 +28,7 @@ public class MenusController : ControllerBase
     }
 
     [HttpGet("tree")]
-    [AuthorizePermission("MenuManagement", "Read")]
+    [AuthorizePermission("Menus", "Read")]
     public async Task<IActionResult> GetTree()
     {
         var result = await _mediator.Send(new GetMenuTreeQuery());
