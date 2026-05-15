@@ -6,8 +6,10 @@ using System;
 namespace SS.AuthService.Application.Users.Queries;
 
 public record GetUsersQuery(
+    string? SearchTerm = null,
     string? Email = null,
     string? FullName = null,
+    string? RoleName = null,
     int? RoleId = null,
     bool? IsActive = null,
     bool? MfaEnabled = null,

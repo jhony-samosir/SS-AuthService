@@ -3,8 +3,10 @@ using System;
 namespace SS.AuthService.Application.Users.Queries;
 
 public record UserFilter(
+    string? SearchTerm,
     string? Email,
     string? FullName,
+    string? RoleName,
     int? RoleId,
     bool? IsActive,
     bool? MfaEnabled,

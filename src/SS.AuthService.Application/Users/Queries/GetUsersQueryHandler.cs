@@ -20,8 +20,10 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, PagedResult<U
     public async Task<PagedResult<UserListItemDto>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
         var filter = new UserFilter(
+            request.SearchTerm,
             request.Email,
             request.FullName,
+            request.RoleName,
             request.RoleId,
             request.IsActive,
             request.MfaEnabled,

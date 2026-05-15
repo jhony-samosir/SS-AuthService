@@ -91,24 +91,6 @@ public class UserController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>
-    /// Membuat user baru oleh Admin.
-    /// </summary>
-    [HttpPost]
-    [AuthorizePermission("Users", "Create")]
-    public async Task<IActionResult> Create([FromBody] CreateUserCommand command)
-    {
-        var result = await _mediator.Send(command);
-        if (!result.IsSuccess)
-        {
-            if (result.ErrorCode == "EmailAlreadyExists")
-                return Conflict(new { message = result.ErrorMessage });
-
-            return BadRequest(new { message = result.ErrorMessage });
-        }
-
-        return CreatedAtAction(nameof(GetDetail), new { publicId = result.Value }, new { publicId = result.Value });
-    }
 
     /// <summary>
     /// Memperbarui data user.

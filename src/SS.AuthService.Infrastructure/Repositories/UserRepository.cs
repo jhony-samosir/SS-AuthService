@@ -67,11 +67,21 @@ public class UserRepository : IUserRepository
             .Where(u => u.DeletedAt == null);
 
         // Filtering
+        if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+        {
+            query = query.Where(u => 
+                EF.Functions.ILike(u.Email, $"%{filter.SearchTerm}%") || 
+                EF.Functions.ILike(u.FullName, $"%{filter.SearchTerm}%"));
+        }
+
         if (!string.IsNullOrWhiteSpace(filter.Email))
             query = query.Where(u => EF.Functions.ILike(u.Email, $"%{filter.Email}%"));
 
         if (!string.IsNullOrWhiteSpace(filter.FullName))
             query = query.Where(u => EF.Functions.ILike(u.FullName, $"%{filter.FullName}%"));
+
+        if (!string.IsNullOrWhiteSpace(filter.RoleName))
+            query = query.Where(u => EF.Functions.ILike(u.Role.Name, filter.RoleName));
 
         if (filter.RoleId.HasValue)
             query = query.Where(u => u.RoleId == filter.RoleId.Value);
