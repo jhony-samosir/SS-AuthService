@@ -1,7 +1,7 @@
 # Stage 1: Build
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
-
+ 
 # Copy the entire source code first so that all referenced projects are available
 COPY . .
 
