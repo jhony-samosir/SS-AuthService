@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+using Serilog;
+using Serilog.Formatting.Compact;
 using SS.AuthService.API.Middlewares;
 using SS.AuthService.Application;
 using SS.AuthService.Infrastructure;
@@ -16,6 +18,12 @@ using SS.AuthService.Infrastructure.Security;
 using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+builder.Host.UseSerilog((context, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(new CompactJsonFormatter()));
 
 // Clear default claim mapping to ensure 'sub' is used as-is
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -139,9 +147,10 @@ app.UseSecurityHeaders(new HeaderPolicyCollection()
     .AddCustomHeader("X-Permitted-Cross-Domain-Policies", "none")
     .RemoveServerHeader());
 
-app.UseMiddleware<ExceptionMiddleware>();
-
 app.UseForwardedHeaders();
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<ExceptionMiddleware>();
+app.UseSerilogRequestLogging();
 
 app.UseMiddleware<GatewayOnlyMiddleware>();
 

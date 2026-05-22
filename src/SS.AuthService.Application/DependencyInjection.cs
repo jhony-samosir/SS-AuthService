@@ -13,6 +13,8 @@ public static class DependencyInjection
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+            // Register LoggingBehavior first in pipeline to capture full duration, including validation errors
+            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
             // Daftarkan ValidationBehavior ke MediatR pipeline agar FluentValidation otomatis berjalan
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         });
