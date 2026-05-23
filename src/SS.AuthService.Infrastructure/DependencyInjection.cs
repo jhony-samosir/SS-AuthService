@@ -44,6 +44,7 @@ public static class DependencyInjection
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
         services.AddScoped<IPasswordHistoryRepository, PasswordHistoryRepository>();
+        services.AddScoped<IOutboxRepository, OutboxRepository>();
 
         // Authentication & Security
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
@@ -60,6 +61,10 @@ public static class DependencyInjection
         services.AddSingleton<IEmailQueue, EmailQueue>();
         services.AddHostedService<EmailBackgroundWorker>();
         services.AddHostedService<SecurityDataRetentionWorker>();
+
+        // Messaging
+        services.AddSingleton<SS.AuthService.Infrastructure.Messaging.IRabbitMQPublisher, SS.AuthService.Infrastructure.Messaging.RabbitMQPublisher>();
+        services.AddHostedService<SS.AuthService.Infrastructure.Messaging.OutboxWorker>();
 
         // Caching & MFA
         services.AddDistributedMemoryCache();

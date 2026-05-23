@@ -1,0 +1,111 @@
+using System;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using RabbitMQ.Client;
+
+namespace SS.AuthService.Infrastructure.Messaging;
+
+public interface IRabbitMQPublisher
+{
+    Task PublishAsync<T>(string routingKey, T message, string eventType);
+}
+
+public class RabbitMQPublisher : IRabbitMQPublisher, IAsyncDisposable
+{
+    private readonly string _hostName;
+    private readonly int _port;
+    private readonly ILogger<RabbitMQPublisher> _logger;
+    private IConnection? _connection;
+    private IChannel? _channel;
+    private readonly string _exchangeName = "samstore.events";
+    private readonly SemaphoreSlim _connectionLock = new(1, 1);
+
+    public RabbitMQPublisher(IConfiguration configuration, ILogger<RabbitMQPublisher> logger)
+    {
+        _hostName = configuration["RabbitMQ:Host"] ?? "host.docker.internal";
+        _port = int.TryParse(configuration["RabbitMQ:Port"], out var p) ? p : 5672;
+        _logger = logger;
+    }
+
+    private async Task EnsureConnectionAsync()
+    {
+        if (_connection is { IsOpen: true } && _channel is { IsOpen: true })
+        {
+            return;
+        }
+
+        await _connectionLock.WaitAsync();
+        try
+        {
+            if (_connection is { IsOpen: true } && _channel is { IsOpen: true })
+            {
+                return;
+            }
+
+            var factory = new ConnectionFactory
+            {
+                HostName = _hostName,
+                Port = _port,
+                AutomaticRecoveryEnabled = true
+            };
+
+            _logger.LogInformation("Connecting to RabbitMQ at {Host}:{Port}...", _hostName, _port);
+            _connection = await factory.CreateConnectionAsync();
+            _channel = await _connection.CreateChannelAsync();
+
+            await _channel.ExchangeDeclareAsync(
+                exchange: _exchangeName,
+                type: "topic",
+                durable: true,
+                autoDelete: false);
+
+            _logger.LogInformation("Connected to RabbitMQ and declared exchange {ExchangeName}", _exchangeName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to connect to RabbitMQ");
+            throw;
+        }
+        finally
+        {
+            _connectionLock.Release();
+        }
+    }
+
+    public async Task PublishAsync<T>(string routingKey, T message, string eventType)
+    {
+        await EnsureConnectionAsync();
+
+        var payload = JsonSerializer.Serialize(message);
+        var body = Encoding.UTF8.GetBytes(payload);
+
+        var properties = new BasicProperties
+        {
+            Persistent = true,
+            ContentType = "application/json",
+            Headers = new System.Collections.Generic.Dictionary<string, object?>
+            {
+                { "event_type", eventType },
+                { "service", "ss-auth-service" }
+            }
+        };
+
+        await _channel!.BasicPublishAsync(
+            exchange: _exchangeName,
+            routingKey: routingKey,
+            mandatory: false,
+            basicProperties: properties,
+            body: body);
+
+        _logger.LogDebug("Published event {EventType} to {ExchangeName} with routing key {RoutingKey}", eventType, _exchangeName, routingKey);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_channel != null) await _channel.CloseAsync();
+        if (_connection != null) await _connection.CloseAsync();
+    }
+}

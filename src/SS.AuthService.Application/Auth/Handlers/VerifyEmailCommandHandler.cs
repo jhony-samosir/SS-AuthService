@@ -9,11 +9,13 @@ public class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, Ver
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITokenHasher _tokenHasher;
+    private readonly IOutboxRepository _outboxRepository;
 
-    public VerifyEmailCommandHandler(IUnitOfWork unitOfWork, ITokenHasher tokenHasher)
+    public VerifyEmailCommandHandler(IUnitOfWork unitOfWork, ITokenHasher tokenHasher, IOutboxRepository outboxRepository)
     {
         _unitOfWork = unitOfWork;
         _tokenHasher = tokenHasher;
+        _outboxRepository = outboxRepository;
     }
 
     public async Task<VerifyEmailResult> Handle(VerifyEmailCommand request, CancellationToken cancellationToken)
@@ -43,6 +45,20 @@ public class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, Ver
             user.EmailVerifiedAt = DateTime.UtcNow;
             _unitOfWork.Users.Update(user);
             _unitOfWork.EmailVerifications.Remove(verification);
+
+            var outboxEvent = new SS.AuthService.Domain.Entities.OutboxEvent
+            {
+                EventType = "UserVerified",
+                AggregateType = "User",
+                AggregateId = user.Id,
+                Payload = System.Text.Json.JsonSerializer.Serialize(new 
+                { 
+                    userId = user.Id,
+                    publicId = user.PublicId,
+                    email = user.Email
+                }),
+            };
+            await _outboxRepository.AddAsync(outboxEvent, cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);

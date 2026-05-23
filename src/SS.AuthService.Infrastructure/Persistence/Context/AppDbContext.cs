@@ -37,6 +37,10 @@ public partial class AppDbContext : DbContext, IDataProtectionKeyContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<OutboxEvent> OutboxEvents { get; set; }
+
+    public virtual DbSet<InboxEvent> InboxEvents { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<DataProtectionKey>(entity =>
@@ -413,6 +417,69 @@ public partial class AppDbContext : DbContext, IDataProtectionKeyContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UpdatedBy).HasColumnName("updated_by");
+        });
+
+        modelBuilder.Entity<OutboxEvent>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("outbox_events_pkey");
+
+            entity.ToTable("outbox_events");
+
+            entity.HasIndex(e => new { e.Status, e.CreatedAt }, "idx_outbox_events_status");
+
+            entity.Property(e => e.Id)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("id");
+            entity.Property(e => e.EventType)
+                .HasMaxLength(255)
+                .HasColumnName("event_type");
+            entity.Property(e => e.AggregateType)
+                .HasMaxLength(100)
+                .HasColumnName("aggregate_type");
+            entity.Property(e => e.AggregateId).HasColumnName("aggregate_id");
+            entity.Property(e => e.Payload)
+                .HasColumnType("jsonb")
+                .HasColumnName("payload");
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasDefaultValue("pending")
+                .HasColumnName("status");
+            entity.Property(e => e.RetryCount)
+                .HasDefaultValue(0)
+                .HasColumnName("retry_count");
+            entity.Property(e => e.PublishedAt).HasColumnName("published_at");
+            entity.Property(e => e.ErrorMessage)
+                .HasColumnName("error_message");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+        });
+
+        modelBuilder.Entity<InboxEvent>(entity =>
+        {
+            entity.HasKey(e => e.MessageId).HasName("inbox_events_pkey");
+
+            entity.ToTable("inbox_events");
+
+            entity.Property(e => e.MessageId)
+                .HasMaxLength(255)
+                .HasColumnName("message_id");
+            entity.Property(e => e.EventType)
+                .HasMaxLength(255)
+                .HasColumnName("event_type");
+            entity.Property(e => e.AggregateType)
+                .HasMaxLength(100)
+                .HasColumnName("aggregate_type");
+            entity.Property(e => e.Payload)
+                .HasColumnType("jsonb")
+                .HasColumnName("payload");
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasDefaultValue("processed")
+                .HasColumnName("status");
+            entity.Property(e => e.ProcessedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("processed_at");
         });
 
         OnModelCreatingPartial(modelBuilder);

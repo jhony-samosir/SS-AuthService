@@ -17,6 +17,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenHasher _tokenHasher;
     private readonly IEmailQueue _emailQueue;
+    private readonly IOutboxRepository _outboxRepository;
 
     public RegisterUserCommandHandler(
         IUserRepository userRepository,
@@ -24,7 +25,8 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         IUnitOfWork unitOfWork,
         IPasswordHasher passwordHasher,
         ITokenHasher tokenHasher,
-        IEmailQueue emailQueue)
+        IEmailQueue emailQueue,
+        IOutboxRepository outboxRepository)
     {
         _userRepository = userRepository;
         _emailVerificationRepository = emailVerificationRepository;
@@ -32,6 +34,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         _passwordHasher = passwordHasher;
         _tokenHasher = tokenHasher;
         _emailQueue = emailQueue;
+        _outboxRepository = outboxRepository;
     }
 
     public async Task<RegisterResult> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
@@ -83,6 +86,22 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
             };
 
             await _emailVerificationRepository.AddAsync(emailVerification, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            var outboxEvent = new OutboxEvent
+            {
+                EventType = "UserRegistered",
+                AggregateType = "User",
+                AggregateId = user.Id,
+                Payload = System.Text.Json.JsonSerializer.Serialize(new 
+                { 
+                    userId = user.Id,
+                    publicId = user.PublicId,
+                    email = user.Email,
+                    fullName = user.FullName
+                }),
+            };
+            await _outboxRepository.AddAsync(outboxEvent, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
