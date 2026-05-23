@@ -10,6 +10,7 @@ using SS.AuthService.Infrastructure.Persistence.Context;
 using SS.AuthService.Infrastructure.Authentication;
 using SS.AuthService.API.Configurations.Json;
 using SS.AuthService.API.Filters;
+using SS.AuthService.API.Extensions;
 using System.IdentityModel.Tokens.Jwt;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
@@ -79,6 +80,7 @@ builder.Services.AddDataProtection()
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddAuthObservability(builder.Configuration);
 
 // 2. Configure Options with Validation
 builder.Services.AddOptions<JwtOptions>()
