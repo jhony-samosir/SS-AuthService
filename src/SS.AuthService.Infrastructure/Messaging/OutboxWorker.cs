@@ -74,7 +74,10 @@ public class OutboxWorker : BackgroundService
                 // but IRabbitMQPublisher serializes T. So we pass an object by deserializing first.
                 var payloadObj = System.Text.Json.JsonSerializer.Deserialize<object>(evt.Payload);
 
-                await publisher.PublishAsync(routingKey, payloadObj, evt.EventType);
+                var messageId = $"auth-event-{evt.Id}";
+                var correlationId = evt.AggregateId.ToString();
+
+                await publisher.PublishAsync(routingKey, payloadObj, evt.EventType, messageId, correlationId);
 
                 evt.Status = "published";
                 evt.PublishedAt = DateTime.UtcNow;

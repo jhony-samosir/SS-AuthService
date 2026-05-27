@@ -10,7 +10,7 @@ namespace SS.AuthService.Infrastructure.Messaging;
 
 public interface IRabbitMQPublisher
 {
-    Task PublishAsync<T>(string routingKey, T message, string eventType);
+    Task PublishAsync<T>(string routingKey, T message, string eventType, string? messageId = null, string? correlationId = null);
 }
 
 public class RabbitMQPublisher : IRabbitMQPublisher, IAsyncDisposable
@@ -75,22 +75,31 @@ public class RabbitMQPublisher : IRabbitMQPublisher, IAsyncDisposable
         }
     }
 
-    public async Task PublishAsync<T>(string routingKey, T message, string eventType)
+    public async Task PublishAsync<T>(string routingKey, T message, string eventType, string? messageId = null, string? correlationId = null)
     {
         await EnsureConnectionAsync();
 
         var payload = JsonSerializer.Serialize(message);
         var body = Encoding.UTF8.GetBytes(payload);
 
+        var headers = new System.Collections.Generic.Dictionary<string, object?>
+        {
+            { "event_type", eventType },
+            { "service", "ss-auth-service" }
+        };
+
+        if (!string.IsNullOrEmpty(messageId))
+        {
+            headers.Add("message-id", messageId);
+        }
+
         var properties = new BasicProperties
         {
             Persistent = true,
             ContentType = "application/json",
-            Headers = new System.Collections.Generic.Dictionary<string, object?>
-            {
-                { "event_type", eventType },
-                { "service", "ss-auth-service" }
-            }
+            MessageId = messageId,
+            CorrelationId = correlationId,
+            Headers = headers
         };
 
         await _channel!.BasicPublishAsync(
