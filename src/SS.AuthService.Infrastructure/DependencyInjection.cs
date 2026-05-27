@@ -48,7 +48,17 @@ public static class DependencyInjection
 
         // Authentication & Security
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
-        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+        services.AddOptions<EmailOptions>()
+            .Bind(configuration.GetSection(EmailOptions.SectionName))
+            .ValidateDataAnnotations()
+            .Validate(options =>
+                !string.IsNullOrWhiteSpace(options.FromEmail) &&
+                !string.IsNullOrWhiteSpace(options.SmtpServer) &&
+                !string.IsNullOrWhiteSpace(options.UserName) &&
+                !string.IsNullOrWhiteSpace(options.Password) &&
+                !string.IsNullOrWhiteSpace(options.BaseUrl),
+                "Email SMTP settings must be configured before sending transactional emails.")
+            .ValidateOnStart();
 
         services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
         services.AddSingleton<IRsaKeyProvider, RsaKeyProvider>();
